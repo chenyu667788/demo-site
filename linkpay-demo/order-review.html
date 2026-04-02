@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单确认 - 支付平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <!-- 头部导航 -->
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-primary text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-gray-900">GlobalUSD</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="#" class="text-sm font-medium text-gray-700 hover:text-primary">帮助中心</a>
+                        <a href="#" class="ml-4 text-sm font-medium text-gray-700 hover:text-primary">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- 左侧：交易订单信息 -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-lg card-shadow p-6">
+                            <h2 class="text-xl font-bold text-gray-900 mb-6">订单确认</h2>
+                            
+                            <!-- 订单信息 -->
+                            <div class="mb-8">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">交易订单信息</h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-neutral">订单编号</span>
+                                        <span class="font-medium">ORD-20260303-12345</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-neutral">订单日期</span>
+                                        <span class="font-medium">2026-03-03 15:30:00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-neutral">交易金额</span>
+                                        <span class="text-xl font-bold text-primary">$1,299.00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-neutral">货币</span>
+                                        <span class="font-medium">USD</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-neutral">支付方式</span>
+                                        <div class="flex space-x-2">
+                                            <i class="fa fa-cc-visa text-blue-600"></i>
+                                            <i class="fa fa-cc-mastercard text-red-600"></i>
+                                            <i class="fa fa-cc-amex text-blue-500"></i>
+                                            <i class="fa fa-cc-paypal text-blue-400"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 支付申请 -->
+                            <div class="border-t border-gray-200 pt-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">支付申请</h3>
+                                <p class="text-neutral mb-4">点击下方按钮生成支付申请URL，跳转至支付页面完成支付。</p>
+                                <button id="generateUrlBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center">
+                                    <i class="fa fa-external-link mr-2"></i>
+                                    生成支付申请URL并跳转
+                                </button>
+                                <div id="urlResult" class="mt-4 hidden">
+                                    <div class="bg-neutral-light p-4 rounded-md">
+                                        <p class="text-neutral mb-2">支付申请URL：</p>
+                                        <div class="flex items-center">
+                                            <input type="text" id="paymentUrl" class="flex-grow p-2 border border-gray-300 rounded-md" readonly>
+                                            <button id="copyUrlBtn" class="ml-2 bg-white hover:bg-gray-100 text-primary font-medium py-2 px-4 rounded-md border border-gray-300 transition-colors duration-200">
+                                                <i class="fa fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧：商品加购信息 -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-lg card-shadow p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">商品信息</h3>
+                            <div class="space-y-4">
+                                <!-- 商品1 -->
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 w-20 h-20 bg-neutral-light rounded-md flex items-center justify-center">
+                                        <i class="fa fa-laptop text-3xl text-neutral"></i>
+                                    </div>
+                                    <div class="ml-4 flex-grow">
+                                        <h4 class="font-medium text-gray-900">MacBook Pro 14英寸</h4>
+                                        <p class="text-sm text-neutral">M3 Pro芯片，16GB内存，512GB存储</p>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <span class="text-sm text-neutral">数量: 1</span>
+                                            <span class="font-medium">$1,299.00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 分隔线 -->
+                                <div class="border-t border-gray-200 pt-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-medium text-gray-900">小计</span>
+                                        <span class="font-medium">$1,299.00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-2">
+                                        <span class="font-medium text-gray-900">运费</span>
+                                        <span class="font-medium">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-2">
+                                        <span class="font-medium text-gray-900">税费</span>
+                                        <span class="font-medium">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+                                        <span class="text-lg font-bold text-gray-900">总计</span>
+                                        <span class="text-lg font-bold text-primary">$1,299.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="bg-white border-t border-gray-200 py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-neutral">© 2026 GlobalUSD. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-sm text-neutral hover:text-primary">隐私政策</a>
+                        <a href="#" class="text-sm text-neutral hover:text-primary">服务条款</a>
+                        <a href="#" class="text-sm text-neutral hover:text-primary">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 生成支付申请URL并跳转
+        document.getElementById('generateUrlBtn').addEventListener('click', function() {
+            // 显示加载状态
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 生成中...';
+            
+            // 尝试不同的API端点格式
+            const evonetApiUrls = [
+                'https://sandbox.evonetonline.com/api/v1/interaction',
+                'https://api-sandbox.evonetonline.com/interaction',
+                'https://sandbox.evonetonline.com/interaction'
+            ];
+            let currentApiIndex = 0;
+            const keyId = 'kid_4e103f2ff33c45b39c8df9ee7c8d1336';
+            const key = 'sk_sandbox_ef8e03d031e74642a36309f446074037';
+            
+            // 生成当前时间
+            const now = new Date();
+            const dateTime = now.toISOString().replace('Z', '+08:00');
+            
+            const requestData = {
+                merchantOrderInfo: {
+                    merchantOrderID: 'ORD-20260303-12345',
+                    merchantOrderTime: dateTime
+                },
+                transAmount: {
+                    currency: 'USD',
+                    value: '1299'
+                },
+                userInfo: {
+                    reference: 'test_user'
+                },
+                validTime: 5,
+                returnUrl: 'https://your-return-url.com/success',
+                webhook: 'https://your-webhook-url.com/notify'
+            };
+            
+            function tryNextApi() {
+                if (currentApiIndex >= evonetApiUrls.length) {
+                    console.error('所有API端点都失败');
+                    alert('生成支付URL失败: 无法连接到Evonet API，请检查网络连接或API配置');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-external-link mr-2"></i> 生成支付申请URL并跳转';
+                    return;
+                }
+                
+                const apiUrl = evonetApiUrls[currentApiIndex];
+                currentApiIndex++;
+                
+                console.log('尝试使用API端点:', apiUrl);
+                console.log('请求数据:', requestData);
+                console.log('请求头:', {
+                    'Content-Type': 'application/json',
+                    'Authorization': key,
+                    'DateTime': dateTime,
+                    'KeyID': keyId,
+                    'SignType': 'Key-based'
+                });
+                
+                // 使用XMLHttpRequest发送请求
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', apiUrl, true);
+                
+                // 设置请求头
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Authorization', key);
+                xhr.setRequestHeader('DateTime', dateTime);
+                xhr.setRequestHeader('KeyID', keyId);
+                xhr.setRequestHeader('SignType', 'Key-based');
+                
+                // 设置超时
+                xhr.timeout = 10000; // 10秒
+                
+                // 处理响应
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        console.log('API响应状态:', xhr.status);
+                        console.log('API响应内容:', xhr.responseText);
+                        console.log('API响应头:', xhr.getAllResponseHeaders());
+                        
+                        if (xhr.status === 200) {
+                            try {
+                                const result = JSON.parse(xhr.responseText);
+                                console.log('API响应解析结果:', result);
+                                
+                                // 显示URL结果 - 查找LinkUrl字段
+                                let paymentUrl = result.LinkUrl || result.linkUrl || result.link_url || result.paymentUrl || result.redirectUrl || result.url;
+                                if (!paymentUrl) {
+                                    throw new Error('API响应中未包含支付URL (LinkUrl)');
+                                }
+                                
+                                // 确保URL格式正确，以https://开头，并且是everonet.com域名
+                                if (!paymentUrl.startsWith('https://')) {
+                                    // 如果是相对路径，构建完整URL
+                                    paymentUrl = 'https://sandbox.evonet.com' + (paymentUrl.startsWith('/') ? '' : '/') + paymentUrl;
+                                } else if (!paymentUrl.includes('evonet.com')) {
+                                    // 如果域名不是evonet.com，替换为正确的域名
+                                    const url = new URL(paymentUrl);
+                                    url.hostname = 'sandbox.evonet.com';
+                                    paymentUrl = url.toString();
+                                }
+                                
+                                console.log('生成的支付URL:', paymentUrl);
+                                
+                                // 验证URL格式
+                                try {
+                                    const url = new URL(paymentUrl);
+                                    console.log('URL解析结果:', {
+                                        protocol: url.protocol,
+                                        hostname: url.hostname,
+                                        pathname: url.pathname,
+                                        search: url.search
+                                    });
+                                } catch (urlError) {
+                                    console.error('URL格式错误:', urlError);
+                                    throw new Error('生成的支付URL格式不正确');
+                                }
+                                
+                                document.getElementById('paymentUrl').value = paymentUrl;
+                                document.getElementById('urlResult').classList.remove('hidden');
+                                
+                                // 延迟跳转
+                                setTimeout(function() {
+                                    window.location.href = paymentUrl;
+                                }, 1500);
+                            } catch (error) {
+                                console.error('错误:', error);
+                                tryNextApi();
+                            }
+                        } else {
+                            console.error('API请求失败:', xhr.status, xhr.responseText);
+                            tryNextApi();
+                        }
+                        
+                        // 恢复按钮状态
+                        if (currentApiIndex >= evonetApiUrls.length) {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fa fa-external-link mr-2"></i> 生成支付申请URL并跳转';
+                        }
+                    }
+                };
+                
+                // 处理超时
+                xhr.ontimeout = function() {
+                    console.error('请求超时');
+                    tryNextApi();
+                };
+                
+                // 处理网络错误
+                xhr.onerror = function() {
+                    console.error('网络错误');
+                    tryNextApi();
+                };
+                
+                // 发送请求
+                xhr.send(JSON.stringify(requestData));
+            }
+            
+            // 开始尝试第一个API端点
+            tryNextApi();
+        });
+        
+        // 复制URL到剪贴板
+        document.getElementById('copyUrlBtn').addEventListener('click', function() {
+            const urlInput = document.getElementById('paymentUrl');
+            urlInput.select();
+            document.execCommand('copy');
+            
+            // 显示复制成功提示
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa fa-check"></i> 已复制';
+            setTimeout(() => {
+                this.innerHTML = originalText;
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

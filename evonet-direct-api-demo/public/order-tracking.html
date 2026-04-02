@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单查询 - Evonet Direct API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <!-- 头部导航 -->
+        <header class="bg-primary border-b border-blue-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="http://localhost:8080/" class="flex items-center text-white hover:text-blue-100 transition-colors mr-6">
+                            <span class="text-sm font-medium">Back to Site</span>
+                        </a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Evonet Direct API</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="index.html" class="text-sm font-medium text-white hover:text-blue-100 transition-colors mr-4">支付首页</a>
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-blue-100 transition-colors">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="flex-grow">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <!-- 查询表单 -->
+                <div class="bg-white rounded-lg card-shadow p-8 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">订单查询</h2>
+                    <form id="queryForm" class="space-y-6">
+                        <div>
+                            <label for="orderId" class="block text-sm font-medium text-gray-700 mb-2">订单编号</label>
+                            <input type="text" id="orderId" name="orderId" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                   placeholder="请输入订单编号" required>
+                        </div>
+                        <button type="submit" 
+                                class="w-full bg-primary hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fa fa-search mr-2"></i>
+                            查询订单
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 查询结果 -->
+                <div id="queryResult" class="hidden">
+                    <div class="bg-white rounded-lg card-shadow p-8">
+                        <div class="text-center mb-6">
+                            <div id="statusIcon" class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
+                                <i class="fa fa-check text-3xl text-green-600"></i>
+                            </div>
+                            <h3 id="statusTitle" class="text-2xl font-bold text-gray-900">查询成功</h3>
+                        </div>
+
+                        <div id="orderDetails" class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">订单编号</span>
+                                    <span id="resultOrderId" class="font-semibold text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">订单状态</span>
+                                    <span id="resultStatus" class="font-semibold text-green-600">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">订单金额</span>
+                                    <span id="resultAmount" class="font-bold text-primary">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">支付方式</span>
+                                    <span id="resultPaymentMethod" class="font-semibold text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">创建时间</span>
+                                    <span id="resultCreateTime" class="font-semibold text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3">
+                                    <span class="text-neutral">支付时间</span>
+                                    <span id="resultPaymentTime" class="font-semibold text-gray-900">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="space-y-3">
+                            <button id="confirmReceiptBtn" 
+                                    class="w-full bg-primary hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed">
+                                <i class="fa fa-check-circle mr-2"></i>
+                                确认收货
+                            </button>
+                            <a href="index.html" 
+                               class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-3 px-6 rounded-lg transition-colors duration-200 text-center">
+                                <i class="fa fa-home mr-2"></i>
+                                返回首页
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 加载状态 -->
+                <div id="loadingState" class="hidden">
+                    <div class="bg-white rounded-lg card-shadow p-8 text-center">
+                        <i class="fa fa-spinner fa-spin text-primary text-4xl mb-4"></i>
+                        <p class="text-gray-600">正在查询订单信息...</p>
+                    </div>
+                </div>
+
+                <!-- 错误状态 -->
+                <div id="errorState" class="hidden">
+                    <div class="bg-white rounded-lg card-shadow p-8 text-center">
+                        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-4">
+                            <i class="fa fa-exclamation-circle text-3xl text-red-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">查询失败</h3>
+                        <p id="errorMessage" class="text-red-600 mb-6">订单未找到</p>
+                        <a href="index.html" 
+                           class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fa fa-home mr-2"></i>
+                            返回首页
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="bg-primary border-t border-blue-700 py-6">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-white text-sm">
+                        &copy; 2026 Evonet. All rights reserved.
+                    </div>
+                    <div class="mt-4 md:mt-0 flex space-x-6">
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">隐私政策</a>
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">服务条款</a>
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 页面加载时检查URL参数
+        window.addEventListener('DOMContentLoaded', function() {
+            // 清除localStorage中的历史订单ID，确保不读取历史数据
+            localStorage.removeItem('lastOrderId');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('orderId');
+            
+            if (orderId) {
+                document.getElementById('orderId').value = orderId;
+                // 自动查询订单
+                queryOrder(orderId);
+            }
+            // 不再自动填充历史订单ID
+        });
+
+        // 表单提交事件
+        document.getElementById('queryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const orderId = document.getElementById('orderId').value.trim();
+            if (orderId) {
+                queryOrder(orderId);
+            }
+        });
+
+        // 查询订单
+        async function queryOrder(orderId) {
+            // 显示加载状态
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('queryResult').classList.add('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+
+            try {
+                // 添加时间戳参数，防止浏览器缓存
+                const timestamp = new Date().getTime();
+                const response = await fetch(`/api/payment/${orderId}?_t=${timestamp}`, {
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayOrderDetails(result.data);
+                } else {
+                    showError(result.error || '订单未找到');
+                }
+            } catch (error) {
+                console.error('查询订单失败:', error);
+                showError('查询订单失败，请稍后重试');
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+        }
+
+        // 显示订单详情
+        function displayOrderDetails(data) {
+            document.getElementById('queryResult').classList.remove('hidden');
+            
+            // 填充订单信息
+            document.getElementById('resultOrderId').textContent = data.merchantTransID || '-';
+            document.getElementById('resultAmount').textContent = `${data.currency || 'HKD'} ${data.amount || '0.00'}`;
+            document.getElementById('resultPaymentMethod').textContent = data.paymentMethod || '信用卡';
+            document.getElementById('resultCreateTime').textContent = data.createdAt || data.createTime || '-';
+            document.getElementById('resultPaymentTime').textContent = data.paidAt || data.paymentTime || '-';
+            
+            // 更新状态显示
+            const statusText = getStatusText(data.status);
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            const resultStatus = document.getElementById('resultStatus');
+            
+            resultStatus.textContent = statusText;
+            
+            // 根据状态更新图标和颜色
+            if (data.status === 'captured' || data.status === 'paid' || data.status === 'completed') {
+                statusIcon.className = 'inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4';
+                statusIcon.innerHTML = '<i class="fa fa-check text-3xl text-green-600"></i>';
+                statusTitle.textContent = '支付成功';
+                resultStatus.className = 'font-semibold text-green-600';
+            } else if (data.status === 'failed' || data.status === 'declined') {
+                statusIcon.className = 'inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-4';
+                statusIcon.innerHTML = '<i class="fa fa-times text-3xl text-red-600"></i>';
+                statusTitle.textContent = '支付失败';
+                resultStatus.className = 'font-semibold text-red-600';
+            } else {
+                statusIcon.className = 'inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-4';
+                statusIcon.innerHTML = '<i class="fa fa-clock text-3xl text-blue-600"></i>';
+                statusTitle.textContent = '处理中';
+                resultStatus.className = 'font-semibold text-blue-600';
+            }
+            
+            // 更新确认收货按钮状态
+            const confirmBtn = document.getElementById('confirmReceiptBtn');
+            if (data.status === 'captured' || data.status === 'paid' || data.status === 'delivered') {
+                confirmBtn.disabled = false;
+            } else {
+                confirmBtn.disabled = true;
+            }
+        }
+
+        // 获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': '处理中',
+                'authorized': '已授权',
+                'captured': '支付成功',
+                'paid': '支付成功',
+                'failed': '支付失败',
+                'declined': '支付失败',
+                'refunded': '已退款',
+                'delivered': '已发货',
+                'completed': '已完成'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 显示错误
+        function showError(message) {
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // 确认收货
+        document.getElementById('confirmReceiptBtn').addEventListener('click', async function() {
+            if (confirm('确认已收到货物吗？')) {
+                const orderId = document.getElementById('resultOrderId').textContent;
+                try {
+                    const response = await fetch(`/api/payment/${orderId}/confirm`, {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('确认收货成功！');
+                        queryOrder(orderId); // 刷新订单信息
+                    } else {
+                        alert('确认收货失败：' + (result.error || '未知错误'));
+                    }
+                } catch (error) {
+                    console.error('确认收货失败:', error);
+                    alert('确认收货失败，请稍后重试');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

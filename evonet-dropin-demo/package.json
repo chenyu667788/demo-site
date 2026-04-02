@@ -1,0 +1,19 @@
+{
+  "name": "evonet-dropin-demo",
+  "version": "1.0.0",
+  "description": "Evonet Drop-in integration demo - Independent Project (Port 3002)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:independent": "start-independent.bat",
+    "dev": "node server.js"
+  },
+  "keywords": ["evonet", "dropin", "payment", "demo"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.12",
+    "cors": "^2.8.5"
+  }
+}

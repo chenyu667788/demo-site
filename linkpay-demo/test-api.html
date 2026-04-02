@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试</title>
+</head>
+<body>
+    <h1>API测试</h1>
+    <button onclick="testAPI()">测试API</button>
+    <div id="result"></div>
+
+    <script>
+        function testAPI() {
+            const requestData = {
+                merchantTranInfo: {
+                    merchantTranID: "TEST-123",
+                    merchantTranTime: new Date().toISOString().replace('Z', '+08:00')
+                },
+                transAmount: {
+                    currency: "USD",
+                    value: "100"
+                },
+                userInfo: {
+                    reference: "test"
+                }
+            };
+
+            fetch('/api/create-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('API请求失败: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = '错误: ' + error.message;
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅管理 - Drop-in Subscription Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0275DD',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+    <script>
+        (function() {
+            window.sdkLoaded = false;
+            
+            var cdnUrls = [
+                'https://cdn.jsdelivr.net/npm/cil-dropin-components@latest/dist/index.min.js',
+                'https://unpkg.com/cil-dropin-components@latest/dist/index.min.js'
+            ];
+            
+            var currentUrlIndex = 0;
+            
+            function loadSDK(url) {
+                var script = document.createElement('script');
+                script.src = url;
+                script.onload = function() {
+                    window.sdkLoaded = true;
+                };
+                script.onerror = function() {
+                    currentUrlIndex++;
+                    if (currentUrlIndex < cdnUrls.length) {
+                        loadSDK(cdnUrls[currentUrlIndex]);
+                    }
+                };
+                setTimeout(function() {
+                    if (!window.sdkLoaded) {
+                        script.onerror();
+                    }
+                }, 10000);
+                document.head.appendChild(script);
+            }
+            
+            loadSDK(cdnUrls[0]);
+        })();
+    </script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-[#0275DD] border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center space-x-6">
+                        <a href="http://localhost:8080/" class="text-sm font-medium text-white hover:text-gray-200">Back to Site</a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Drop-in Subscription</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-gray-200">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8">订阅管理</h1>
+
+                <div id="searchSection" class="bg-white rounded-lg card-shadow p-6 mb-8">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">查找您的订阅</h2>
+                    <div class="flex gap-4">
+                        <input type="text" id="customerIdInput" placeholder="请输入客户ID或邮箱"
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <button id="searchBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fa fa-search mr-2"></i>查找
+                        </button>
+                    </div>
+                    <p class="mt-2 text-sm text-neutral">提示：客户ID可在订阅确认邮件中找到</p>
+                </div>
+
+                <div id="tokenInfoSection" class="hidden bg-white rounded-lg card-shadow p-6 mb-8">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fa fa-credit-card text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">支付方式</h3>
+                                <p id="tokenStatus" class="text-sm text-neutral"></p>
+                            </div>
+                        </div>
+                        <div id="tokenActions"></div>
+                    </div>
+                </div>
+
+                <div id="subscriptionsContainer" class="hidden">
+                    <div id="subscriptionsList"></div>
+                </div>
+
+                <div id="noSubscriptions" class="hidden bg-white rounded-lg card-shadow p-8 text-center">
+                    <i class="fa fa-inbox text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-neutral">暂无订阅记录</p>
+                    <a href="/" class="mt-4 inline-block bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200">
+                        浏览订阅方案
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-[#0275DD] py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-white">© 2026 Drop-in Subscription Demo. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-sm text-white hover:text-gray-200">隐私政策</a>
+                        <a href="#" class="text-sm text-white hover:text-gray-200">服务条款</a>
+                        <a href="#" class="text-sm text-white hover:text-gray-200">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div id="upgradeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">升级订阅方案</h3>
+            <div id="upgradeOptions" class="space-y-3 mb-6"></div>
+            <div class="flex gap-4">
+                <button id="confirmUpgrade" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                    确认升级
+                </button>
+                <button id="cancelUpgrade" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="downgradeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">降级订阅方案</h3>
+            <div id="downgradeOptions" class="space-y-3 mb-6"></div>
+            <div class="flex gap-4">
+                <button id="confirmDowngrade" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                    确认降级
+                </button>
+                <button id="cancelDowngrade" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">完成支付</h3>
+            <div id="dropInModal" class="min-h-[400px]"></div>
+            <button id="closePaymentModal" class="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                关闭
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let allPlans = [];
+        let currentSubscription = null;
+        let selectedNewPlan = null;
+        let currentCustomerId = null;
+        let hasToken = false;
+
+        async function loadPlans() {
+            try {
+                const response = await fetch('/api/plans');
+                const data = await response.json();
+                if (data.success) {
+                    allPlans = data.plans;
+                }
+            } catch (error) {
+                console.error('Failed to load plans:', error);
+            }
+        }
+
+        function formatDate(isoString) {
+            return new Date(isoString).toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        async function searchSubscriptions(customerId) {
+            currentCustomerId = customerId;
+            try {
+                const response = await fetch(`/api/customer/${encodeURIComponent(customerId)}/subscriptions`);
+                const data = await response.json();
+                
+                if (data.success && data.subscriptions.length > 0) {
+                    hasToken = data.hasToken;
+                    renderTokenInfo(data.tokenInfo);
+                    renderSubscriptions(data.subscriptions);
+                    document.getElementById('subscriptionsContainer').classList.remove('hidden');
+                    document.getElementById('noSubscriptions').classList.add('hidden');
+                } else {
+                    document.getElementById('subscriptionsContainer').classList.add('hidden');
+                    document.getElementById('noSubscriptions').classList.remove('hidden');
+                    document.getElementById('tokenInfoSection').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Search failed:', error);
+                alert('查找失败，请检查客户ID是否正确');
+            }
+        }
+
+        function renderTokenInfo(tokenInfo) {
+            const section = document.getElementById('tokenInfoSection');
+            const status = document.getElementById('tokenStatus');
+            const actions = document.getElementById('tokenActions');
+            
+            section.classList.remove('hidden');
+            
+            if (hasToken && tokenInfo) {
+                status.innerHTML = `<span class="text-green-600 font-medium">已绑定卡片</span> (**** ${tokenInfo.cardLast4})`;
+                actions.innerHTML = `
+                    <span class="text-sm text-green-600">
+                        <i class="fa fa-check-circle mr-1"></i>支持自动扣费
+                    </span>
+                `;
+            } else {
+                status.innerHTML = `<span class="text-yellow-600 font-medium">未绑定卡片</span> - 需要绑定卡片以支持自动续费`;
+                actions.innerHTML = `
+                    <button onclick="bindCard()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fa fa-plus mr-2"></i>绑定卡片
+                    </button>
+                `;
+            }
+        }
+
+        async function bindCard() {
+            if (!currentCustomerId) {
+                alert('请先查找订阅');
+                return;
+            }
+            
+            const activeSub = subscriptions.values().next().value;
+            if (!activeSub) {
+                alert('没有可用的订阅');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/subscription/${activeSub.id}/bind-card`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.sessionId) {
+                        showPaymentModal(data.sessionId, data.linkUrl);
+                    } else if (data.linkUrl) {
+                        window.location.href = data.linkUrl;
+                    }
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Bind card failed:', error);
+                alert('绑定卡片失败: ' + error.message);
+            }
+        }
+
+        function getSDK() {
+            if (typeof CILDropin !== 'undefined') return CILDropin;
+            if (typeof DropInSDK !== 'undefined') return DropInSDK;
+            if (typeof cil !== 'undefined') return cil;
+            if (typeof evonet !== 'undefined') return evonet;
+            return null;
+        }
+
+        function checkSDKWithDelay() {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 20;
+                const interval = 1000;
+                
+                function check() {
+                    attempts++;
+                    const sdk = getSDK();
+                    if (sdk !== null) {
+                        window.sdkLoaded = true;
+                        resolve(true);
+                    } else if (attempts < maxAttempts) {
+                        setTimeout(check, interval);
+                    } else {
+                        resolve(false);
+                    }
+                }
+                
+                check();
+            });
+        }
+
+        async function showPaymentModal(sessionId, linkUrl) {
+            const modal = document.getElementById('paymentModal');
+            const container = document.getElementById('dropInModal');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            container.innerHTML = '<div class="text-center py-8"><i class="fa fa-spinner fa-spin text-4xl text-primary"></i><p class="mt-4 text-neutral">加载支付组件...</p></div>';
+            
+            const sdkLoaded = await checkSDKWithDelay();
+            
+            if (sdkLoaded && sessionId) {
+                const SDK = getSDK();
+                try {
+                    const sdkConfig = {
+                        id: '#dropInModal',
+                        type: 'payment',
+                        sessionID: sessionId,
+                        locale: 'zh-CN',
+                        mode: 'embedded',
+                        environment: 'UAT',
+                        appearance: {
+                            colorBackground: '#fff'
+                        },
+                        payment_completed: function(params) {
+                            console.log('Payment completed:', params);
+                            alert('绑定成功！');
+                            closePaymentModal();
+                            searchSubscriptions(currentCustomerId);
+                        },
+                        payment_failed: function(params) {
+                            console.log('Payment failed:', params);
+                            alert('绑定失败: ' + (params.message || '未知错误'));
+                        }
+                    };
+                    
+                    if (typeof SDK.create === 'function') {
+                        SDK.create(sdkConfig);
+                    } else if (typeof SDK.init === 'function') {
+                        SDK.init(sdkConfig);
+                    } else {
+                        new SDK(sdkConfig);
+                    }
+                } catch (error) {
+                    console.error('SDK init error:', error);
+                    if (linkUrl) {
+                        container.innerHTML = `<iframe src="${linkUrl}" width="100%" height="400px" frameborder="0"></iframe>`;
+                    }
+                }
+            } else if (linkUrl) {
+                container.innerHTML = `<iframe src="${linkUrl}" width="100%" height="400px" frameborder="0"></iframe>`;
+            }
+        }
+
+        function closePaymentModal() {
+            const modal = document.getElementById('paymentModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('dropInModal').innerHTML = '';
+        }
+
+        function renderSubscriptions(subs) {
+            const container = document.getElementById('subscriptionsList');
+            container.innerHTML = subs.map(sub => `
+                <div class="bg-white rounded-lg card-shadow p-6 mb-6">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">${sub.plan.name}</h3>
+                            <p class="text-sm text-neutral">${sub.plan.description}</p>
+                        </div>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(sub.status)}">
+                            ${getStatusText(sub.status)}
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-sm text-neutral mb-1">订阅金额</p>
+                            <p class="text-xl font-bold text-primary">$${sub.plan.price}<span class="text-sm font-normal text-neutral">/月</span></p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-sm text-neutral mb-1">订阅时间</p>
+                            <p class="font-medium text-gray-900">${formatDate(sub.createdAt)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-sm text-neutral mb-1">到期时间</p>
+                            <p class="font-medium text-gray-900">${formatDate(sub.nextBillingDate)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-sm text-neutral mb-1">订阅ID</p>
+                            <p class="font-medium text-gray-900 text-sm">${sub.id}</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">方案包含：</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${sub.plan.features.map(f => `
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fa fa-check text-secondary mr-2"></i>
+                                    ${f}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    ${sub.status === 'active' || sub.status === 'upgraded' || sub.status === 'downgraded' ? `
+                        <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
+                            ${hasToken ? `
+                                <button onclick="renewSubscription('${sub.id}')" class="bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                    <i class="fa fa-refresh mr-2"></i>立即续费
+                                </button>
+                            ` : ''}
+                            <button onclick="showUpgradeModal('${sub.id}')" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                <i class="fa fa-arrow-up mr-2"></i>升级方案
+                            </button>
+                            <button onclick="showDowngradeModal('${sub.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                <i class="fa fa-arrow-down mr-2"></i>降级方案
+                            </button>
+                            <button onclick="cancelSubscription('${sub.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                <i class="fa fa-times mr-2"></i>取消订阅
+                            </button>
+                        </div>
+                    ` : ''}
+
+                    ${sub.status === 'cancelled' ? `
+                        <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
+                            <a href="/" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                <i class="fa fa-refresh mr-2"></i>重新订阅
+                            </a>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'active': return 'bg-green-100 text-green-800';
+                case 'pending': return 'bg-yellow-100 text-yellow-800';
+                case 'cancelled': return 'bg-red-100 text-red-800';
+                case 'upgraded': return 'bg-blue-100 text-blue-800';
+                case 'downgraded': return 'bg-purple-100 text-purple-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getStatusText(status) {
+            switch(status) {
+                case 'active': return '已激活';
+                case 'pending': return '待支付';
+                case 'cancelled': return '已取消';
+                case 'upgraded': return '已升级';
+                case 'downgraded': return '已降级';
+                default: return status;
+            }
+        }
+
+        async function renewSubscription(subscriptionId) {
+            if (!confirm('确定要立即续费吗？将使用已绑定的卡片自动扣费。')) {
+                return;
+            }
+            
+            try {
+                const btn = event.target;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>处理中...';
+                
+                const response = await fetch(`/api/subscription/${subscriptionId}/renew`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message || '续费成功！');
+                    searchSubscriptions(currentCustomerId);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Renew failed:', error);
+                alert('续费失败: ' + error.message);
+            }
+        }
+
+        function showUpgradeModal(subscriptionId) {
+            currentSubscription = subscriptionId;
+            const modal = document.getElementById('upgradeModal');
+            const options = document.getElementById('upgradeOptions');
+            
+            options.innerHTML = allPlans
+                .filter(p => p.price > 10)
+                .map(p => `
+                    <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                        <input type="radio" name="upgradePlan" value="${p.id}" class="mr-3">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-900">${p.name}</p>
+                            <p class="text-sm text-neutral">${p.description}</p>
+                        </div>
+                        <p class="font-bold text-primary">$${p.price}/月</p>
+                    </label>
+                `).join('');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function showDowngradeModal(subscriptionId) {
+            currentSubscription = subscriptionId;
+            const modal = document.getElementById('downgradeModal');
+            const options = document.getElementById('downgradeOptions');
+            
+            options.innerHTML = allPlans
+                .filter(p => p.price < 50)
+                .map(p => `
+                    <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                        <input type="radio" name="downgradePlan" value="${p.id}" class="mr-3">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-900">${p.name}</p>
+                            <p class="text-sm text-neutral">${p.description}</p>
+                        </div>
+                        <p class="font-bold text-primary">$${p.price}/月</p>
+                    </label>
+                `).join('');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        async function cancelSubscription(subscriptionId) {
+            if (!confirm('确定要取消订阅吗？取消后将在当前计费周期结束后生效。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/subscription/${subscriptionId}/cancel`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('订阅已取消');
+                    searchSubscriptions(currentCustomerId);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Cancel failed:', error);
+                alert('取消失败: ' + error.message);
+            }
+        }
+
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            const customerId = document.getElementById('customerIdInput').value.trim();
+            if (customerId) {
+                searchSubscriptions(customerId);
+            }
+        });
+
+        document.getElementById('customerIdInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const customerId = this.value.trim();
+                if (customerId) {
+                    searchSubscriptions(customerId);
+                }
+            }
+        });
+
+        document.getElementById('confirmUpgrade').addEventListener('click', async function() {
+            const selected = document.querySelector('input[name="upgradePlan"]:checked');
+            if (!selected) {
+                alert('请选择要升级的方案');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/subscription/${currentSubscription}/upgrade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newPlanId: selected.value })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.sessionId) {
+                        document.getElementById('upgradeModal').classList.add('hidden');
+                        document.getElementById('upgradeModal').classList.remove('flex');
+                        showPaymentModal(data.sessionId, data.linkUrl);
+                    } else if (data.linkUrl) {
+                        window.location.href = data.linkUrl;
+                    } else {
+                        alert(data.message || '升级成功');
+                        document.getElementById('upgradeModal').classList.add('hidden');
+                        document.getElementById('upgradeModal').classList.remove('flex');
+                        searchSubscriptions(currentCustomerId);
+                    }
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Upgrade failed:', error);
+                alert('升级失败: ' + error.message);
+            }
+        });
+
+        document.getElementById('cancelUpgrade').addEventListener('click', function() {
+            document.getElementById('upgradeModal').classList.add('hidden');
+            document.getElementById('upgradeModal').classList.remove('flex');
+        });
+
+        document.getElementById('confirmDowngrade').addEventListener('click', async function() {
+            const selected = document.querySelector('input[name="downgradePlan"]:checked');
+            if (!selected) {
+                alert('请选择要降级的方案');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/subscription/${currentSubscription}/downgrade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newPlanId: selected.value })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('降级成功，将在当前计费周期结束后生效');
+                    document.getElementById('downgradeModal').classList.add('hidden');
+                    document.getElementById('downgradeModal').classList.remove('flex');
+                    searchSubscriptions(currentCustomerId);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Downgrade failed:', error);
+                alert('降级失败: ' + error.message);
+            }
+        });
+
+        document.getElementById('cancelDowngrade').addEventListener('click', function() {
+            document.getElementById('downgradeModal').classList.add('hidden');
+            document.getElementById('downgradeModal').classList.remove('flex');
+        });
+
+        document.getElementById('closePaymentModal').addEventListener('click', closePaymentModal);
+
+        loadPlans();
+    </script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅失败 - Drop-in Subscription Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-[#0275DD] border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center space-x-6">
+                        <a href="http://localhost:8080/" class="text-sm font-medium text-white hover:text-gray-200">Back to Site</a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Drop-in Subscription</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-gray-200">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="bg-white rounded-lg card-shadow p-8 text-center">
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-6">
+                        <i class="fa fa-times text-3xl text-red-600"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-4">订阅失败</h1>
+                    <p class="text-neutral mb-8">很抱歉，您的订阅未能成功完成，请稍后重试。</p>
+                    
+                    <div class="bg-red-50 rounded-lg p-6 mb-8 text-left">
+                        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                            <i class="fa fa-exclamation-triangle text-red-500 mr-2"></i>
+                            可能的原因
+                        </h3>
+                        <ul class="space-y-2 text-sm text-gray-600">
+                            <li class="flex items-start">
+                                <i class="fa fa-circle text-red-400 mr-2 mt-1 text-xs"></i>
+                                支付超时或被取消
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-circle text-red-400 mr-2 mt-1 text-xs"></i>
+                                支付信息有误
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-circle text-red-400 mr-2 mt-1 text-xs"></i>
+                                网络连接问题
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-circle text-red-400 mr-2 mt-1 text-xs"></i>
+                                银行卡余额不足
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="space-y-4">
+                        <a href="/" class="block w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fa fa-refresh mr-2"></i>
+                            重新订阅
+                        </a>
+                        <a href="subscription-management.html" class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fa fa-cog mr-2"></i>
+                            管理我的订阅
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-blue-50 rounded-lg p-6">
+                    <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                        <i class="fa fa-question-circle text-primary mr-2"></i>
+                        需要帮助？
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        如果您在订阅过程中遇到问题，请联系我们的客服团队获取帮助。
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#" class="text-sm text-primary hover:underline">
+                            <i class="fa fa-envelope mr-1"></i>
+                            联系客服
+                        </a>
+                        <a href="#" class="text-sm text-primary hover:underline">
+                            <i class="fa fa-book mr-1"></i>
+                            帮助中心
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-white border-t border-gray-200 py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-neutral">© 2026 Drop-in Subscription Demo. 保留所有权利。</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

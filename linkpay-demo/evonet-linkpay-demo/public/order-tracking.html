@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单追踪 - Evonet LinkPay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'rgb(2, 117, 221)',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                        'brand-blue': 'rgb(2, 117, 221)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-[rgb(242,249,255)] font-sans">
+    <div class="min-h-screen flex flex-col">
+        <!-- 头部导航 -->
+        <header class="bg-[rgb(2,117,221)] border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="http://localhost:8080/" class="text-sm text-white hover:text-white/80 mr-6">Back to site</a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Evonet LinkPay</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-white/80">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="flex-grow">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <!-- 页面标题 -->
+                    <div class="bg-gradient-to-r from-primary to-indigo-600 px-6 py-4">
+                        <h1 class="text-2xl font-bold text-white">订单追踪</h1>
+                        <p class="text-indigo-100 text-sm mt-1">实时查看订单状态和退款进度</p>
+                    </div>
+                    
+                    <!-- 订单查询 -->
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex gap-3">
+                            <input type="text" id="searchOrderId" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入订单编号">
+                            <button id="searchBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200">
+                                <i class="fa fa-search mr-2"></i>查询
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 当前订单信息 -->
+                    <div id="currentOrder" class="hidden">
+                        <!-- 订单状态进度条 -->
+                        <div class="p-6 border-b border-gray-200 bg-gray-50">
+                            <h2 class="text-lg font-semibold text-gray-900 mb-6">订单状态</h2>
+                            
+                            <!-- 横向进度条 -->
+                            <div class="relative">
+                                <!-- 进度条背景线 -->
+                                <div class="absolute top-5 left-0 right-0 h-1 bg-gray-200"></div>
+                                <!-- 进度条填充线 -->
+                                <div id="progressBar" class="absolute top-5 left-0 h-1 bg-secondary transition-all duration-500" style="width: 0%"></div>
+                                
+                                <!-- 步骤节点 -->
+                                <div class="relative flex justify-between">
+                                    <!-- 步骤1: 订单创建 -->
+                                    <div class="flex flex-col items-center">
+                                        <div id="step1Icon" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center z-10 transition-all duration-300">
+                                            <i class="fa fa-shopping-cart text-gray-500"></i>
+                                        </div>
+                                        <span class="mt-2 text-xs font-medium text-gray-500">订单创建</span>
+                                        <span id="step1Time" class="mt-1 text-xs text-gray-400">-</span>
+                                    </div>
+                                    
+                                    <!-- 步骤2: 支付完成 -->
+                                    <div class="flex flex-col items-center">
+                                        <div id="step2Icon" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center z-10 transition-all duration-300">
+                                            <i class="fa fa-credit-card text-gray-500"></i>
+                                        </div>
+                                        <span class="mt-2 text-xs font-medium text-gray-500">支付完成</span>
+                                        <span id="step2Time" class="mt-1 text-xs text-gray-400">等待支付</span>
+                                    </div>
+                                    
+                                    <!-- 步骤3: 已发货 -->
+                                    <div class="flex flex-col items-center">
+                                        <div id="step3Icon" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center z-10 transition-all duration-300">
+                                            <i class="fa fa-truck text-gray-500"></i>
+                                        </div>
+                                        <span class="mt-2 text-xs font-medium text-gray-500">已发货</span>
+                                        <span id="step3Time" class="mt-1 text-xs text-gray-400">等待发货</span>
+                                    </div>
+                                    
+                                    <!-- 步骤4: 已完成 -->
+                                    <div class="flex flex-col items-center">
+                                        <div id="step4Icon" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center z-10 transition-all duration-300">
+                                            <i class="fa fa-check-circle text-gray-500"></i>
+                                        </div>
+                                        <span class="mt-2 text-xs font-medium text-gray-500">已完成</span>
+                                        <span id="step4Time" class="mt-1 text-xs text-gray-400">等待确认</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 订单详情 -->
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">订单详情</h3>
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <span class="text-sm text-gray-500 block mb-1">订单编号</span>
+                                    <p id="detailOrderId" class="text-base font-semibold text-gray-900">-</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <span class="text-sm text-gray-500 block mb-1">交易金额</span>
+                                    <p id="detailAmount" class="text-base font-semibold text-primary">-</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <span class="text-sm text-gray-500 block mb-1">货币</span>
+                                    <p id="detailCurrency" class="text-base font-semibold text-gray-900">-</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <span class="text-sm text-gray-500 block mb-1">用户参考</span>
+                                    <p id="detailReference" class="text-base font-semibold text-gray-900">-</p>
+                                </div>
+                                <!-- 退款金额 - 放入订单详情里 -->
+                                <div id="refundAmountField" class="bg-red-50 rounded-lg p-4 hidden">
+                                    <span class="text-sm text-red-500 block mb-1">退款金额</span>
+                                    <p id="detailRefundAmount" class="text-base font-semibold text-red-600">-</p>
+                                </div>
+                                <div id="refundTransIdField" class="bg-red-50 rounded-lg p-4 hidden">
+                                    <span class="text-sm text-red-500 block mb-1">退款编号</span>
+                                    <p id="detailRefundTransId" class="text-base font-semibold text-red-600">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 操作按钮 -->
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">操作</h3>
+                            <!-- 默认操作按钮 -->
+                            <div id="defaultActions" class="grid grid-cols-3 gap-4">
+                                <button id="confirmReceiptBtn" class="bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                    <i class="fa fa-check-circle mr-2"></i>确认收货
+                                </button>
+                                <button id="refundBtn" class="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                    <i class="fa fa-undo mr-2"></i>申请退款
+                                </button>
+                                <button id="newPaymentBtnDefault" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                    <i class="fa fa-plus mr-2"></i>发起新支付
+                                </button>
+                            </div>
+                            <!-- 退款中操作按钮 -->
+                            <div id="refundActions" class="hidden grid grid-cols-2 gap-4">
+                                <button id="confirmRefundBtn" class="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                    <i class="fa fa-check-circle mr-2"></i>确认退款
+                                </button>
+                                <button id="newPaymentBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                    <i class="fa fa-plus mr-2"></i>发起新支付
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 无订单提示 -->
+                    <div id="noOrder" class="text-center py-16">
+                        <i class="fa fa-shopping-cart text-gray-300 text-6xl mb-4"></i>
+                        <p class="text-gray-500 text-lg">请输入订单编号进行查询</p>
+                    </div>
+                    
+                    <!-- 加载状态 -->
+                    <div id="loading" class="hidden text-center py-16">
+                        <i class="fa fa-spinner fa-spin text-primary text-4xl mb-4"></i>
+                        <p class="text-gray-500">加载中...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="bg-[rgb(2,117,221)] py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-white">© 2026 Evonet LinkPay Demo. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-sm text-white hover:text-white/80">隐私政策</a>
+                        <a href="#" class="text-sm text-white hover:text-white/80">服务条款</a>
+                        <a href="#" class="text-sm text-white hover:text-white/80">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 退款模态框 -->
+    <div id="refundModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">申请退款</h3>
+            </div>
+            <div class="px-6 py-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">退款金额</label>
+                    <div class="flex items-center">
+                        <span id="refundCurrency" class="text-gray-500 mr-2">USD</span>
+                        <input type="number" id="refundAmount" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" step="0.01">
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">退款金额不能超过订单金额</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">退款原因</label>
+                    <textarea id="refundReason" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" rows="3" placeholder="请输入退款原因"></textarea>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button id="cancelRefundBtn" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200">取消</button>
+                <button id="submitRefundBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200">提交退款</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取URL参数
+        function getUrlParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+        // 格式化时间
+        function formatDateTime(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN');
+        }
+        
+        // 更新进度条
+        function updateProgressBar(status) {
+            const progressBar = document.getElementById('progressBar');
+            const step1Icon = document.getElementById('step1Icon');
+            const step2Icon = document.getElementById('step2Icon');
+            const step3Icon = document.getElementById('step3Icon');
+            const step4Icon = document.getElementById('step4Icon');
+            
+            let progress = 0;
+            
+            // 重置所有步骤
+            [step1Icon, step2Icon, step3Icon, step4Icon].forEach(icon => {
+                icon.className = 'w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center z-10 transition-all duration-300';
+                icon.innerHTML = icon.innerHTML.replace('text-white', 'text-gray-500');
+            });
+            
+            // 设置步骤1为完成状态
+            step1Icon.className = 'w-10 h-10 rounded-full bg-secondary flex items-center justify-center z-10 transition-all duration-300';
+            step1Icon.innerHTML = '<i class="fa fa-shopping-cart text-white"></i>';
+            
+            switch (status) {
+                case 'Paid':
+                case 'Captured':
+                    progress = 50;
+                    step2Icon.className = 'w-10 h-10 rounded-full bg-secondary flex items-center justify-center z-10 transition-all duration-300';
+                    step2Icon.innerHTML = '<i class="fa fa-credit-card text-white"></i>';
+                    document.getElementById('step2Time').textContent = '已完成';
+                    break;
+                case 'Shipped':
+                    progress = 75;
+                    step2Icon.className = 'w-10 h-10 rounded-full bg-secondary flex items-center justify-center z-10 transition-all duration-300';
+                    step2Icon.innerHTML = '<i class="fa fa-credit-card text-white"></i>';
+                    step3Icon.className = 'w-10 h-10 rounded-full bg-secondary flex items-center justify-center z-10 transition-all duration-300';
+                    step3Icon.innerHTML = '<i class="fa fa-truck text-white"></i>';
+                    document.getElementById('step2Time').textContent = '已完成';
+                    document.getElementById('step3Time').textContent = '已发货';
+                    break;
+                case 'Completed':
+                case 'Delivered':
+                    progress = 100;
+                    step2Icon.className = 'w-10 h-10 rounded-full bg-secondary flex items-center justify-center z-10 transition-all duration-300';
+                    step2Icon.innerHTML = '<i class="fa fa-credit-card text-white"></i>';
+                    step3Icon.className = 'w-10 h-10 rounded-full bg-secondary flex items-center justify-center z-10 transition-all duration-300';
+                    step3Icon.innerHTML = '<i class="fa fa-truck text-white"></i>';
+                    step4Icon.className = 'w-10 h-10 rounded-full bg-secondary flex items-center justify-center z-10 transition-all duration-300';
+                    step4Icon.innerHTML = '<i class="fa fa-check-circle text-white"></i>';
+                    document.getElementById('step2Time').textContent = '已完成';
+                    document.getElementById('step3Time').textContent = '已发货';
+                    document.getElementById('step4Time').textContent = '已完成';
+                    break;
+                default:
+                    progress = 25;
+            }
+            
+            progressBar.style.width = progress + '%';
+        }
+        
+        // 更新退款流程进度条（覆盖原订单状态）
+        function updateRefundFlowProgressBar(refundStatus) {
+            const progressBar = document.getElementById('progressBar');
+            const step1Icon = document.getElementById('step1Icon');
+            const step2Icon = document.getElementById('step2Icon');
+            const step3Icon = document.getElementById('step3Icon');
+            const step4Icon = document.getElementById('step4Icon');
+            
+            // 修改进度条颜色为红色
+            progressBar.className = 'absolute top-5 left-0 h-1 bg-red-500 transition-all duration-500';
+            
+            // 隐藏第4步，只显示3步退款流程
+            step4Icon.parentElement.classList.add('hidden');
+            
+            let progress = 0;
+            
+            // 重置所有步骤
+            [step1Icon, step2Icon, step3Icon].forEach(icon => {
+                icon.className = 'w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center z-10 transition-all duration-300';
+            });
+            
+            // 修改步骤标签为退款流程
+            const step1Label = step1Icon.parentElement.querySelector('span:nth-child(2)');
+            const step2Label = step2Icon.parentElement.querySelector('span:nth-child(2)');
+            const step3Label = step3Icon.parentElement.querySelector('span:nth-child(2)');
+            
+            step1Label.textContent = '申请退款';
+            step2Label.textContent = '等待退款';
+            step3Label.textContent = '已退款';
+            
+            switch (refundStatus) {
+                case 'Pending':
+                    progress = 33;
+                    step1Icon.className = 'w-10 h-10 rounded-full bg-red-500 flex items-center justify-center z-10 transition-all duration-300';
+                    step1Icon.innerHTML = '<i class="fa fa-paper-plane text-white"></i>';
+                    document.getElementById('step1Time').textContent = formatDateTime(new Date().toISOString());
+                    document.getElementById('step2Time').textContent = '等待处理';
+                    document.getElementById('step3Time').textContent = '完成退款';
+                    break;
+                case 'Processing':
+                    progress = 66;
+                    step1Icon.className = 'w-10 h-10 rounded-full bg-red-500 flex items-center justify-center z-10 transition-all duration-300';
+                    step1Icon.innerHTML = '<i class="fa fa-paper-plane text-white"></i>';
+                    step2Icon.className = 'w-10 h-10 rounded-full bg-red-500 flex items-center justify-center z-10 transition-all duration-300';
+                    step2Icon.innerHTML = '<i class="fa fa-clock-o text-white"></i>';
+                    document.getElementById('step2Time').textContent = '处理中';
+                    document.getElementById('step3Time').textContent = '完成退款';
+                    break;
+                case 'Completed':
+                case 'Refunded':
+                    progress = 100;
+                    step1Icon.className = 'w-10 h-10 rounded-full bg-red-500 flex items-center justify-center z-10 transition-all duration-300';
+                    step1Icon.innerHTML = '<i class="fa fa-paper-plane text-white"></i>';
+                    step2Icon.className = 'w-10 h-10 rounded-full bg-red-500 flex items-center justify-center z-10 transition-all duration-300';
+                    step2Icon.innerHTML = '<i class="fa fa-clock-o text-white"></i>';
+                    step3Icon.className = 'w-10 h-10 rounded-full bg-red-500 flex items-center justify-center z-10 transition-all duration-300';
+                    step3Icon.innerHTML = '<i class="fa fa-check-circle text-white"></i>';
+                    document.getElementById('step3Time').textContent = '完成退款';
+                    break;
+                default:
+                    progress = 0;
+            }
+            
+            progressBar.style.width = progress + '%';
+        }
+        
+        // 更新订单状态显示
+        function updateOrderStatus(order) {
+            const status = order.merchantOrderInfo?.status || order.status || 'Pending';
+            
+            // 检查是否有退款信息（优先从API获取，其次从localStorage获取）
+            let hasRefund = order.refundInfo || order.refundStatus || order.transactionInfo?.refundInfo;
+            let refundStatus = null;
+            let refundAmount = null;
+            let refundTransId = null;
+            
+            if (hasRefund) {
+                refundStatus = order.refundInfo?.status || 
+                              order.refundStatus || 
+                              order.transactionInfo?.refundInfo?.status || 
+                              'Pending';
+                refundAmount = order.refundInfo?.amount || 
+                              order.refundAmount || 
+                              order.transactionInfo?.refundInfo?.amount;
+                refundTransId = order.refundInfo?.refundTransID || 
+                               order.refundTransID || 
+                               order.transactionInfo?.refundInfo?.refundTransID || '-';
+            } else {
+                // 从 localStorage 检查退款信息
+                const storedOrder = localStorage.getItem('currentOrder');
+                if (storedOrder) {
+                    const parsed = JSON.parse(storedOrder);
+                    if (parsed.refundStatus) {
+                        hasRefund = true;
+                        refundStatus = parsed.refundStatus;
+                        refundAmount = parsed.refundAmount;
+                        refundTransId = parsed.refundTransId;
+                    }
+                }
+            }
+            
+            if (hasRefund) {
+                // 有退款信息，显示退款流程
+                updateRefundFlowProgressBar(refundStatus);
+                
+                // 显示退款金额字段
+                if (refundAmount) {
+                    document.getElementById('refundAmountField').classList.remove('hidden');
+                    document.getElementById('refundTransIdField').classList.remove('hidden');
+                }
+                
+                // 切换操作按钮
+                document.getElementById('defaultActions').classList.add('hidden');
+                document.getElementById('refundActions').classList.remove('hidden');
+                
+                // 保存退款信息
+                window.currentOrder = window.currentOrder || {};
+                window.currentOrder.refundAmount = refundAmount;
+                window.currentOrder.refundTransId = refundTransId;
+                window.currentOrder.refundStatus = refundStatus;
+            } else {
+                // 无退款信息，显示正常订单流程
+                updateProgressBar(status);
+            }
+            
+            // 更新订单详情 - 确保字段与发起支付页面一致
+            const orderId = order.merchantOrderInfo?.merchantOrderID || 
+                           order.merchantOrderID || 
+                           order.orderId || 
+                           getUrlParam('orderId') || '-';
+            
+            // 金额处理 - 确保不显示 "--"
+            let amount = order.transAmount?.value || 
+                        order.amount || 
+                        order.merchantOrderInfo?.transAmount?.value;
+            let currency = order.transAmount?.currency || 
+                          order.currency || 
+                          order.merchantOrderInfo?.transAmount?.currency || 'USD';
+            
+            // 如果从API获取不到金额，尝试从本地存储获取
+            if (!amount || amount === '-') {
+                const storedOrder = localStorage.getItem('currentOrder');
+                if (storedOrder) {
+                    const parsed = JSON.parse(storedOrder);
+                    amount = parsed.amount;
+                    currency = parsed.currency || currency;
+                }
+            }
+            
+            // 确保金额和货币有值
+            amount = amount || '-';
+            currency = currency || 'USD';
+            
+            const reference = order.userInfo?.reference || 
+                             order.merchantOrderInfo?.userInfo?.reference || 
+                             order.reference || '-';
+            
+            document.getElementById('detailOrderId').textContent = orderId;
+            document.getElementById('detailAmount').textContent = amount + ' ' + currency;
+            document.getElementById('detailCurrency').textContent = currency;
+            document.getElementById('detailReference').textContent = reference;
+            
+            // 更新创建时间
+            document.getElementById('step1Time').textContent = order.merchantOrderInfo?.merchantOrderTime ? formatDateTime(order.merchantOrderInfo.merchantOrderTime) : formatDateTime(order.createTime);
+            
+            // 更新退款金额显示
+            if (hasRefund && refundAmount) {
+                document.getElementById('detailRefundAmount').textContent = refundAmount + ' ' + currency;
+                document.getElementById('detailRefundTransId').textContent = refundTransId || '-';
+            }
+            
+            // 存储订单信息用于退款
+            window.currentOrder = {
+                orderId: orderId,
+                amount: amount,
+                currency: currency,
+                merchantTransID: order.transactionInfo?.merchantTransInfo?.merchantTransID || 
+                                 order.merchantTransID,
+                refundAmount: window.currentOrder?.refundAmount,
+                refundTransId: window.currentOrder?.refundTransId,
+                refundStatus: window.currentOrder?.refundStatus
+            };
+        }
+        
+        // 从本地存储加载订单信息
+        function loadOrderFromStorage() {
+            const storedOrder = localStorage.getItem('currentOrder');
+            if (storedOrder) {
+                const order = JSON.parse(storedOrder);
+                const urlOrderId = getUrlParam('orderId');
+                
+                // 如果URL中的订单ID与存储的一致，显示存储的信息
+                if (urlOrderId && order.orderId === urlOrderId) {
+                    document.getElementById('detailOrderId').textContent = order.orderId;
+                    document.getElementById('detailAmount').textContent = order.amount + ' ' + order.currency;
+                    document.getElementById('detailCurrency').textContent = order.currency;
+                    document.getElementById('detailReference').textContent = order.reference || '-';
+                    document.getElementById('step1Time').textContent = formatDateTime(order.createTime);
+                    
+                    window.currentOrder = {
+                        orderId: order.orderId,
+                        amount: order.amount,
+                        currency: order.currency
+                    };
+                    
+                    // 检查是否有退款信息，恢复退款状态
+                    if (order.refundStatus) {
+                        window.currentOrder.refundAmount = order.refundAmount;
+                        window.currentOrder.refundTransId = order.refundTransId;
+                        window.currentOrder.refundStatus = order.refundStatus;
+                        
+                        // 显示退款流程
+                        updateRefundFlowProgressBar(order.refundStatus);
+                        
+                        // 显示退款金额字段
+                        if (order.refundAmount) {
+                            document.getElementById('refundAmountField').classList.remove('hidden');
+                            document.getElementById('refundTransIdField').classList.remove('hidden');
+                            document.getElementById('detailRefundAmount').textContent = order.refundAmount + ' ' + order.currency;
+                            document.getElementById('detailRefundTransId').textContent = order.refundTransId || '-';
+                        }
+                        
+                        // 切换操作按钮
+                        document.getElementById('defaultActions').classList.add('hidden');
+                        document.getElementById('refundActions').classList.remove('hidden');
+                    }
+                }
+            }
+        }
+        
+        // 查询订单
+        async function queryOrder(orderId) {
+            if (!orderId) {
+                alert('请输入订单编号');
+                return;
+            }
+            
+            // 显示加载状态
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('currentOrder').classList.add('hidden');
+            document.getElementById('noOrder').classList.add('hidden');
+            
+            try {
+                const response = await fetch(`/api/order/${orderId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateOrderStatus(data.order);
+                    document.getElementById('currentOrder').classList.remove('hidden');
+                } else {
+                    alert('订单不存在');
+                    document.getElementById('noOrder').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('查询订单失败:', error);
+                alert('查询订单失败: ' + error.message);
+                document.getElementById('noOrder').classList.remove('hidden');
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+        
+        // 确认收货
+        function confirmReceipt() {
+            alert('确认收货功能需要商家发货后操作');
+        }
+        
+        // 显示退款模态框
+        function showRefundModal() {
+            if (!window.currentOrder || !window.currentOrder.merchantTransID) {
+                alert('该订单暂不支持退款，请确认订单是否已支付');
+                return;
+            }
+            
+            document.getElementById('refundAmount').value = window.currentOrder.amount;
+            document.getElementById('refundCurrency').textContent = window.currentOrder.currency;
+            document.getElementById('refundReason').value = '';
+            document.getElementById('refundModal').classList.remove('hidden');
+            document.getElementById('refundModal').classList.add('flex');
+        }
+        
+        // 隐藏退款模态框
+        function hideRefundModal() {
+            document.getElementById('refundModal').classList.add('hidden');
+            document.getElementById('refundModal').classList.remove('flex');
+        }
+        
+        // 提交退款
+        async function submitRefund() {
+            const amount = document.getElementById('refundAmount').value;
+            const reason = document.getElementById('refundReason').value;
+            
+            if (!amount || amount <= 0) {
+                alert('请输入有效的退款金额');
+                return;
+            }
+            
+            if (parseFloat(amount) > parseFloat(window.currentOrder.amount)) {
+                alert('退款金额不能超过订单金额');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/refund', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        merchantTransID: window.currentOrder.merchantTransID,
+                        amount: amount,
+                        currency: window.currentOrder.currency
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('退款申请已提交');
+                    hideRefundModal();
+                    
+                    // 保存退款信息
+                    window.currentOrder.refundAmount = amount;
+                    window.currentOrder.refundTransId = data.refund.merchantTransID || data.refund.refundTransID || '-';
+                    window.currentOrder.refundStatus = 'Pending';
+                    
+                    // 保存退款信息到 localStorage（刷新后保持一致）
+                    const storedOrder = JSON.parse(localStorage.getItem('currentOrder') || '{}');
+                    storedOrder.refundAmount = amount;
+                    storedOrder.refundTransId = window.currentOrder.refundTransId;
+                    storedOrder.refundStatus = 'Pending';
+                    localStorage.setItem('currentOrder', JSON.stringify(storedOrder));
+                    
+                    // 覆盖原订单状态，显示退款流程
+                    updateRefundFlowProgressBar('Pending');
+                    
+                    // 显示退款金额字段
+                    document.getElementById('refundAmountField').classList.remove('hidden');
+                    document.getElementById('refundTransIdField').classList.remove('hidden');
+                    document.getElementById('detailRefundAmount').textContent = amount + ' ' + window.currentOrder.currency;
+                    document.getElementById('detailRefundTransId').textContent = window.currentOrder.refundTransId;
+                    
+                    // 切换操作按钮
+                    document.getElementById('defaultActions').classList.add('hidden');
+                    document.getElementById('refundActions').classList.remove('hidden');
+                } else {
+                    alert('退款申请失败: ' + data.error);
+                }
+            } catch (error) {
+                console.error('退款失败:', error);
+                alert('退款失败: ' + error.message);
+            }
+        }
+        
+        // 确认退款
+        function confirmRefund() {
+            if (window.currentOrder && window.currentOrder.refundStatus) {
+                // 更新退款状态为完成
+                window.currentOrder.refundStatus = 'Completed';
+                updateRefundFlowProgressBar('Completed');
+                
+                // 更新 localStorage 中的退款状态
+                const storedOrder = JSON.parse(localStorage.getItem('currentOrder') || '{}');
+                storedOrder.refundStatus = 'Completed';
+                localStorage.setItem('currentOrder', JSON.stringify(storedOrder));
+                
+                alert('退款已确认完成');
+            }
+        }
+        
+        // 发起新支付
+        function newPayment() {
+            window.location.href = '/';
+        }
+        
+        // 页面加载完成后自动查询订单
+        document.addEventListener('DOMContentLoaded', function() {
+            const orderId = getUrlParam('orderId');
+            if (orderId) {
+                document.getElementById('searchOrderId').value = orderId;
+                
+                // 先从本地存储加载订单信息（立即显示）
+                loadOrderFromStorage();
+                
+                // 显示订单区域
+                document.getElementById('currentOrder').classList.remove('hidden');
+                document.getElementById('noOrder').classList.add('hidden');
+                
+                // 然后查询API获取最新状态
+                queryOrder(orderId);
+            }
+        });
+        
+        // 查询按钮点击事件
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            const orderId = document.getElementById('searchOrderId').value;
+            queryOrder(orderId);
+        });
+        
+        // 回车查询
+        document.getElementById('searchOrderId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                queryOrder(this.value);
+            }
+        });
+        
+        // 确认收货按钮点击事件
+        document.getElementById('confirmReceiptBtn').addEventListener('click', confirmReceipt);
+        
+        // 退款按钮点击事件
+        document.getElementById('refundBtn').addEventListener('click', showRefundModal);
+        
+        // 取消退款按钮点击事件
+        document.getElementById('cancelRefundBtn').addEventListener('click', hideRefundModal);
+        
+        // 提交退款按钮点击事件
+        document.getElementById('submitRefundBtn').addEventListener('click', submitRefund);
+        
+        // 确认退款按钮点击事件
+        document.getElementById('confirmRefundBtn').addEventListener('click', confirmRefund);
+        
+        // 发起新支付按钮点击事件（默认操作区）
+        document.getElementById('newPaymentBtnDefault').addEventListener('click', newPayment);
+        
+        // 发起新支付按钮点击事件（退款操作区）
+        document.getElementById('newPaymentBtn').addEventListener('click', newPayment);
+    </script>
+</body>
+</html>

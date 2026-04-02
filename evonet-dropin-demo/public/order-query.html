@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单查询 - Evonet Drop-in Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-primary border-b border-blue-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="http://localhost:8080/" class="flex items-center text-white hover:text-blue-100 transition-colors mr-6">
+                            <span class="text-sm font-medium">Back to Site</span>
+                        </a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Evonet Drop-in</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-blue-100 transition-colors">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <!-- 查询表单 -->
+                <div class="bg-white rounded-lg card-shadow p-8 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">订单查询</h2>
+                    <form id="queryForm" class="space-y-6">
+                        <div>
+                            <label for="orderId" class="block text-sm font-medium text-gray-700 mb-2">订单编号</label>
+                            <input type="text" id="orderId" name="orderId" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                   placeholder="请输入订单编号" required>
+                        </div>
+                        <button type="submit" 
+                                class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fa fa-search mr-2"></i>
+                            查询订单
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 查询结果 -->
+                <div id="queryResult" class="hidden">
+                    <div class="bg-white rounded-lg card-shadow p-8">
+                        <div class="text-center mb-6">
+                            <div id="statusIcon" class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
+                                <i class="fa fa-check text-3xl text-green-600"></i>
+                            </div>
+                            <h3 id="statusTitle" class="text-2xl font-bold text-gray-900">查询成功</h3>
+                        </div>
+
+                        <div id="orderDetails" class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">订单编号</span>
+                                    <span id="resultOrderId" class="font-semibold text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">订单状态</span>
+                                    <span id="resultStatus" class="font-semibold text-green-600">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">订单金额</span>
+                                    <span id="resultAmount" class="font-bold text-primary">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">支付方式</span>
+                                    <span id="resultPaymentMethod" class="font-medium text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                                    <span class="text-neutral">交易ID</span>
+                                    <span id="resultTransactionId" class="font-medium text-gray-900 text-sm">-</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3">
+                                    <span class="text-neutral">创建时间</span>
+                                    <span id="resultTime" class="font-medium text-gray-900">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <a href="/" class="block w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 text-center">
+                                <i class="fa fa-home mr-2"></i>
+                                返回首页
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 错误提示 -->
+                <div id="errorResult" class="hidden">
+                    <div class="bg-white rounded-lg card-shadow p-8 text-center">
+                        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-4">
+                            <i class="fa fa-times text-3xl text-red-600"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">查询失败</h3>
+                        <p id="errorMessage" class="text-gray-600 mb-6">未找到该订单，请检查订单编号是否正确。</p>
+                        <a href="/" class="inline-block bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fa fa-home mr-2"></i>
+                            返回首页
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-primary border-t border-blue-700 py-6">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-white text-sm">
+                        &copy; 2026 Evonet. All rights reserved.
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-white hover:text-blue-100 text-sm transition-colors">
+                            联系我们
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 从URL参数获取订单ID
+        function getOrderIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('orderId') || urlParams.get('merchantOrderID');
+        }
+
+        // 格式化金额
+        function formatAmount(amount, currency) {
+            const symbol = currency === 'USD' ? '$' : currency === 'HKD' ? 'HK$' : '¥';
+            return `${symbol}${parseFloat(amount).toFixed(2)}`;
+        }
+
+        // 格式化日期时间
+        function formatDateTime(dateTime) {
+            if (!dateTime || dateTime === '-') return '-';
+            try {
+                const date = new Date(dateTime);
+                return date.toLocaleDateString('zh-CN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return dateTime;
+            }
+        }
+
+        // 查询订单
+        async function queryOrder(orderId) {
+            try {
+                const response = await fetch(`/api/order/${orderId}`);
+                const data = await response.json();
+                
+                if (data.success && data.order) {
+                    displayOrderResult(data.order);
+                } else {
+                    displayError(data.message || '未找到该订单');
+                }
+            } catch (error) {
+                console.error('Query order error:', error);
+                displayError('查询订单失败，请稍后重试');
+            }
+        }
+
+        // 显示订单结果
+        function displayOrderResult(order) {
+            document.getElementById('queryResult').classList.remove('hidden');
+            document.getElementById('errorResult').classList.add('hidden');
+            
+            document.getElementById('resultOrderId').textContent = order.orderId || '-';
+            document.getElementById('resultAmount').textContent = formatAmount(order.amount, order.currency);
+            document.getElementById('resultTransactionId').textContent = order.transactionId || '-';
+            document.getElementById('resultPaymentMethod').textContent = order.paymentMethod || '-';
+            document.getElementById('resultTime').textContent = formatDateTime(order.orderTime);
+            
+            // 根据状态更新显示
+            const statusEl = document.getElementById('resultStatus');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            
+            if (order.status === 'success' || order.result === 'success') {
+                statusEl.textContent = '支付成功';
+                statusEl.className = 'font-semibold text-green-600';
+                statusIcon.innerHTML = '<i class="fa fa-check text-3xl text-green-600"></i>';
+                statusIcon.className = 'inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4';
+                statusTitle.textContent = '支付成功';
+            } else if (order.status === 'failed' || order.result === 'failed') {
+                statusEl.textContent = '支付失败';
+                statusEl.className = 'font-semibold text-red-600';
+                statusIcon.innerHTML = '<i class="fa fa-times text-3xl text-red-600"></i>';
+                statusIcon.className = 'inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-4';
+                statusTitle.textContent = '支付失败';
+            } else if (order.status === 'pending' || order.result === 'pending') {
+                statusEl.textContent = '处理中';
+                statusEl.className = 'font-semibold text-yellow-600';
+                statusIcon.innerHTML = '<i class="fa fa-clock-o text-3xl text-yellow-600"></i>';
+                statusIcon.className = 'inline-flex items-center justify-center w-20 h-20 rounded-full bg-yellow-100 mb-4';
+                statusTitle.textContent = '处理中';
+            } else {
+                statusEl.textContent = order.status || '-';
+                statusEl.className = 'font-semibold text-gray-600';
+            }
+        }
+
+        // 显示错误
+        function displayError(message) {
+            document.getElementById('queryResult').classList.add('hidden');
+            document.getElementById('errorResult').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // 表单提交
+        document.getElementById('queryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const orderId = document.getElementById('orderId').value.trim();
+            if (orderId) {
+                queryOrder(orderId);
+            }
+        });
+
+        // 页面加载时检查URL参数
+        window.addEventListener('DOMContentLoaded', function() {
+            const orderId = getOrderIdFromUrl();
+            if (orderId) {
+                document.getElementById('orderId').value = orderId;
+                queryOrder(orderId);
+            }
+        });
+    </script>
+</body>
+</html>

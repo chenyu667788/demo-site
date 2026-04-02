@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅方案 - Drop-in Subscription Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0275DD',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                        'popular': '#4ADAFC',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .plan-card {
+                transition: all 0.3s ease;
+            }
+            .plan-card:hover {
+                transform: translateY(-4px);
+            }
+            .plan-card.selected {
+                border-color: #0275DD;
+                box-shadow: 0 0 0 3px rgba(2, 117, 221, 0.2);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-[#0275DD] border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center space-x-6">
+                        <a href="http://localhost:8080/" class="text-sm font-medium text-white hover:text-gray-200">Back to Site</a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Drop-in Subscription</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-gray-200">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl font-bold text-gray-900 mb-4">选择您的订阅方案</h1>
+                    <p class="text-xl text-neutral">灵活的定价方案，满足不同需求</p>
+                </div>
+
+                <div id="plansContainer" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <div class="text-center py-12">
+                        <i class="fa fa-spinner fa-spin text-4xl text-primary"></i>
+                        <p class="mt-4 text-neutral">加载订阅方案中...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-[#0275DD] py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-white">© 2026 Drop-in Subscription Demo. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-sm text-white hover:text-gray-200">隐私政策</a>
+                        <a href="#" class="text-sm text-white hover:text-gray-200">服务条款</a>
+                        <a href="#" class="text-sm text-white hover:text-gray-200">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div id="privacyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">隐私政策</h3>
+            <div class="text-sm text-gray-600 space-y-4">
+                <p>我们重视您的隐私，并致力于保护您的个人信息。本隐私政策说明我们如何收集、使用和保护您的信息。</p>
+                <h4 class="font-semibold text-gray-900">信息收集</h4>
+                <p>我们收集您在订阅过程中提供的个人信息，包括姓名、邮箱地址和手机号码。</p>
+                <h4 class="font-semibold text-gray-900">信息使用</h4>
+                <p>您的信息将用于处理订阅、发送订阅相关通知、提供客户支持以及改进我们的服务。</p>
+                <h4 class="font-semibold text-gray-900">信息保护</h4>
+                <p>我们采用行业标准的安全措施保护您的个人信息，包括SSL加密和安全的支付处理系统。</p>
+                <h4 class="font-semibold text-gray-900">信息共享</h4>
+                <p>我们不会将您的个人信息出售或分享给第三方，除非获得您的明确同意或法律要求。</p>
+            </div>
+            <button onclick="closePrivacyModal()" class="mt-6 w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                我已了解
+            </button>
+        </div>
+    </div>
+
+    <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">服务条款</h3>
+            <div class="text-sm text-gray-600 space-y-4">
+                <p>使用本服务即表示您同意以下条款。请仔细阅读。</p>
+                <h4 class="font-semibold text-gray-900">订阅服务</h4>
+                <p>订阅服务按月计费，将在每个计费周期结束时自动续费，除非您取消订阅。</p>
+                <h4 class="font-semibold text-gray-900">支付</h4>
+                <p>您同意授权我们使用您提供的支付方式进行订阅费用的扣除。所有支付均通过安全的支付网关处理。</p>
+                <h4 class="font-semibold text-gray-900">取消政策</h4>
+                <p>您可以随时取消订阅。取消后，您仍可使用服务直到当前计费周期结束。</p>
+                <h4 class="font-semibold text-gray-900">退款政策</h4>
+                <p>订阅费用一经支付，概不退款。如有特殊情况，请联系客服处理。</p>
+                <h4 class="font-semibold text-gray-900">服务变更</h4>
+                <p>我们保留随时修改服务内容和价格的权利。重大变更将提前通知您。</p>
+            </div>
+            <button onclick="closeTermsModal()" class="mt-6 w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                我已了解
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let plans = [];
+        let selectedPlan = null;
+
+        async function loadPlans() {
+            try {
+                const response = await fetch('/api/plans');
+                const data = await response.json();
+                if (data.success) {
+                    plans = data.plans;
+                    renderPlans();
+                }
+            } catch (error) {
+                console.error('Failed to load plans:', error);
+                document.getElementById('plansContainer').innerHTML = `
+                    <div class="col-span-3 text-center py-12">
+                        <i class="fa fa-exclamation-circle text-4xl text-red-500"></i>
+                        <p class="mt-4 text-red-500">加载失败，请刷新页面重试</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderPlans() {
+            const container = document.getElementById('plansContainer');
+            container.innerHTML = plans.map(plan => `
+                <div class="plan-card bg-white rounded-lg card-shadow p-8 relative cursor-pointer ${plan.popular ? 'border-2 border-[#4ADAFC]' : 'border border-gray-200'}"
+                    data-plan-id="${plan.id}" onclick="selectPlan('${plan.id}')">
+                    ${plan.popular ? '<div class="absolute top-0 right-0 bg-[#4ADAFC] text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">最受欢迎</div>' : ''}
+                    <div class="text-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">${plan.name}</h3>
+                        <p class="text-sm text-neutral">${plan.description}</p>
+                    </div>
+                    <div class="text-center mb-6">
+                        <span class="text-4xl font-bold text-gray-900">$${plan.price}</span>
+                        <span class="text-neutral">/${plan.billingCycle === 'monthly' ? '月' : '年'}</span>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        ${plan.features.map(feature => `
+                            <li class="flex items-center text-sm text-gray-600">
+                                <i class="fa fa-check-circle text-secondary mr-3"></i>
+                                ${feature}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <button id="btn-${plan.id}" class="plan-btn w-full py-3 rounded-lg font-medium transition-colors duration-200 bg-primary text-white hover:bg-primary/90">
+                        选择此方案
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function selectPlan(planId) {
+            selectedPlan = plans.find(p => p.id === planId);
+            
+            document.querySelectorAll('.plan-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-plan-id="${planId}"]`).classList.add('selected');
+            
+            document.querySelectorAll('.plan-btn').forEach(btn => {
+                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.add('bg-primary', 'hover:bg-primary/90');
+                btn.textContent = '选择此方案';
+            });
+            
+            const selectedBtn = document.getElementById(`btn-${planId}`);
+            selectedBtn.classList.remove('bg-primary', 'hover:bg-primary/90');
+            selectedBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            selectedBtn.textContent = '已选中';
+            
+            const subscriptionData = {
+                planId: selectedPlan.id,
+                planName: selectedPlan.name,
+                planPrice: selectedPlan.price,
+                planDescription: selectedPlan.description,
+                planFeatures: selectedPlan.features,
+                billingCycle: selectedPlan.billingCycle
+            };
+            sessionStorage.setItem('selectedPlan', JSON.stringify(subscriptionData));
+            
+            window.location.href = '/checkout.html';
+        }
+
+        function showPrivacyPolicy(e) {
+            e.preventDefault();
+            document.getElementById('privacyModal').classList.remove('hidden');
+            document.getElementById('privacyModal').classList.add('flex');
+        }
+
+        function closePrivacyModal() {
+            document.getElementById('privacyModal').classList.add('hidden');
+            document.getElementById('privacyModal').classList.remove('flex');
+        }
+
+        function showTermsOfService(e) {
+            e.preventDefault();
+            document.getElementById('termsModal').classList.remove('hidden');
+            document.getElementById('termsModal').classList.add('flex');
+        }
+
+        function closeTermsModal() {
+            document.getElementById('termsModal').classList.add('hidden');
+            document.getElementById('termsModal').classList.remove('flex');
+        }
+
+        loadPlans();
+    </script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅支付 - LinkPay Subscription Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0275DD',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-primary border-b border-primary/80">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="http://localhost:8080/" class="flex-shrink-0 flex items-center text-white/90 hover:text-white mr-6">
+                            <span class="text-sm font-medium">Back to Site</span>
+                        </a>
+                        <div class="flex-shrink-0 flex items-center border-l border-white/30 pl-6">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">LinkPay Subscription</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white/90 hover:text-white">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white rounded-lg card-shadow p-8">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                            <i class="fa fa-info-circle text-primary mr-2"></i>
+                            订阅信息
+                        </h2>
+                        
+                        <div id="subscriptionInfo" class="space-y-4">
+                            <div class="animate-pulse space-y-4">
+                                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                                <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg card-shadow p-8">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                            <i class="fa fa-calendar text-primary mr-2"></i>
+                            订阅周期
+                        </h2>
+                        
+                        <div id="billingInfo" class="space-y-4">
+                            <div class="animate-pulse space-y-4">
+                                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-white rounded-lg card-shadow p-8">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                        <i class="fa fa-list-alt text-primary mr-2"></i>
+                        方案详情
+                    </h2>
+                    
+                    <div id="planDetails">
+                        <div class="animate-pulse space-y-4">
+                            <div class="h-4 bg-gray-200 rounded w-full"></div>
+                            <div class="h-4 bg-gray-200 rounded w-full"></div>
+                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="bg-primary border-t border-primary/80 py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-white/80">© 2026 LinkPay Subscription Demo. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-sm text-white/80 hover:text-white">隐私政策</a>
+                        <a href="#" class="text-sm text-white/80 hover:text-white">服务条款</a>
+                        <a href="#" class="text-sm text-white/80 hover:text-white">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatDateShort(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        async function loadSubscriptionInfo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const subscriptionId = urlParams.get('subscriptionId');
+            const resultType = urlParams.get('resultType');
+            const paymentStatus = urlParams.get('paymentStatus');
+            
+            if (resultType === 'Success' || paymentStatus === 'Success') {
+                if (subscriptionId) {
+                    await fetch(`/api/subscription/${subscriptionId}/activate`, { method: 'POST' });
+                }
+                window.location.href = `/success.html?subscriptionId=${subscriptionId}`;
+                return;
+            }
+            
+            if (resultType === 'Closed' || paymentStatus === 'Failed') {
+                window.location.href = `/error.html?subscriptionId=${subscriptionId}`;
+                return;
+            }
+            
+            if (!subscriptionId) {
+                document.getElementById('subscriptionInfo').innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fa fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+                        <p class="text-red-500">未找到订阅信息</p>
+                        <a href="/" class="mt-4 inline-block text-primary hover:underline">返回首页</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/subscription/${subscriptionId}`);
+                const data = await response.json();
+                
+                if (data.success && data.subscription) {
+                    const sub = data.subscription;
+                    const plan = sub.plan;
+                    
+                    document.getElementById('subscriptionInfo').innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                <span class="text-neutral">订阅方案</span>
+                                <span class="font-semibold text-gray-900">${plan.name}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                <span class="text-neutral">订阅金额</span>
+                                <span class="font-bold text-2xl text-primary">$${plan.price}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-3">
+                                <span class="text-neutral">计费周期</span>
+                                <span class="font-medium text-gray-900">${plan.billingCycle === 'monthly' ? '每月' : '每年'}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('billingInfo').innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                <span class="text-neutral">首次订阅时间</span>
+                                <span class="font-medium text-gray-900">${formatDate(sub.createdAt)}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                <span class="text-neutral">当前周期开始</span>
+                                <span class="font-medium text-gray-900">${formatDateShort(sub.currentPeriodStart)}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                <span class="text-neutral">到期/自动扣款时间</span>
+                                <span class="font-medium text-primary">${formatDateShort(sub.nextBillingDate)}</span>
+                            </div>
+                            <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+                                <p class="text-sm text-yellow-800">
+                                    <i class="fa fa-info-circle mr-1"></i>
+                                    到期后将自动续费，您可随时取消订阅
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('planDetails').innerHTML = `
+                        <div>
+                            <p class="text-gray-600 mb-4">${plan.description}</p>
+                            <h4 class="font-semibold text-gray-900 mb-3">方案包含：</h4>
+                            <ul class="space-y-2">
+                                ${plan.features.map(feature => `
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fa fa-check-circle text-secondary mr-3"></i>
+                                        ${feature}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Subscription not found');
+                }
+            } catch (error) {
+                console.error('Failed to load subscription:', error);
+                document.getElementById('subscriptionInfo').innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fa fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+                        <p class="text-red-500">加载订阅信息失败</p>
+                        <a href="/" class="mt-4 inline-block text-primary hover:underline">返回首页</a>
+                    </div>
+                `;
+            }
+        }
+
+        loadSubscriptionInfo();
+    </script>
+</body>
+</html>

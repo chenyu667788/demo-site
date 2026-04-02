@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evonet Direct API 支付演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <!-- 头部导航 -->
+        <header class="bg-primary border-b border-blue-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="http://localhost:8080/" class="flex items-center text-white hover:text-blue-100 transition-colors mr-6">
+                            <span class="text-sm font-medium">Back to Site</span>
+                        </a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Evonet Direct API</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-blue-100 transition-colors">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="flex-grow">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
+                        <!-- 左栏：订单详情 -->
+                        <div class="bg-gray-50 p-8 border-r border-gray-200">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">订单详情</h2>
+                            
+                            <div class="space-y-6">
+                                <!-- 订单信息卡片 -->
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">订单信息</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">订单编号:</span>
+                                            <span id="displayOrderId" class="font-medium text-gray-900">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">创建时间:</span>
+                                            <span id="displayOrderTime" class="font-medium text-gray-900">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 商品信息卡片 -->
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">商品信息</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-12 h-12 bg-blue-100 rounded flex items-center justify-center mr-3">
+                                                    <i class="fa fa-shopping-bag text-primary text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">商品名称</p>
+                                                    <p class="text-sm text-gray-500">商品描述</p>
+                                                </div>
+                                            </div>
+                                            <span id="displayAmount" class="font-semibold text-gray-900">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 金额汇总 -->
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">金额汇总</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">小计:</span>
+                                            <span id="displaySubtotal" class="font-medium text-gray-900">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">税费:</span>
+                                            <span class="font-medium text-gray-900">$0.00</span>
+                                        </div>
+                                        <div class="border-t pt-3 flex justify-between">
+                                            <span class="text-lg font-semibold text-gray-900">总计:</span>
+                                            <span id="displayTotal" class="text-lg font-semibold text-primary">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右栏：支付详情 -->
+                        <div class="bg-white p-8 flex flex-col">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">支付详情</h2>
+                            
+                            <!-- 支付表单 -->
+                            <form id="paymentForm" class="flex-grow flex flex-col">
+                                <!-- 隐藏的输入字段 -->
+                                <input type="hidden" id="orderId" name="orderId" value="ORD-20260316-">
+                                <input type="hidden" id="amount" name="amount" value="100">
+                                <input type="hidden" id="currency" name="currency" value="HKD">
+                                
+                                <!-- 支付区域 -->
+                                <div class="flex-grow">
+                                    <!-- 初始状态：安全提示 -->
+                                    <div id="paymentPlaceholder" class="border border-gray-300 rounded-lg p-8 min-h-[400px] flex flex-col items-center justify-center">
+                                        <div class="text-center space-y-6">
+                                            <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                                                <i class="fa fa-shield text-primary text-3xl"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-xl font-semibold text-gray-900 mb-2">安全支付</h3>
+                                                <p class="text-gray-600">您的支付信息将被安全加密处理</p>
+                                            </div>
+                                            <div class="space-y-3 text-left max-w-sm mx-auto">
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fa fa-check-circle text-green-500 mr-3"></i>
+                                                    <span>256位SSL加密保护</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fa fa-check-circle text-green-500 mr-3"></i>
+                                                    <span>PCI DSS认证支付网关</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fa fa-check-circle text-green-500 mr-3"></i>
+                                                    <span>实时交易监控</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 支付方式选择 -->
+                                    <div id="paymentMethodSelection" class="hidden space-y-6">
+                                        <!-- 支付方式选择 -->
+                                        <div>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-4">选择支付方式</h3>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <!-- 信用卡 -->
+                                                <div class="border-2 border-primary rounded-lg p-4 cursor-pointer payment-method-option selected" data-method="credit">
+                                                    <div class="flex items-center justify-center">
+                                                        <i class="fa fa-credit-card text-primary text-2xl mr-3"></i>
+                                                        <span class="font-medium text-gray-900">信用卡</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- 借记卡 -->
+                                                <div class="border-2 border-gray-300 rounded-lg p-4 cursor-pointer payment-method-option" data-method="debit">
+                                                    <div class="flex items-center justify-center">
+                                                        <i class="fa fa-credit-card text-gray-600 text-2xl mr-3"></i>
+                                                        <span class="font-medium text-gray-900">借记卡</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 卡片信息输入 -->
+                                        <div id="cardInputSection" class="space-y-4">
+                                            <h3 class="text-lg font-medium text-gray-900">卡片信息</h3>
+                                            
+                                            <!-- 卡号输入 -->
+                                            <div>
+                                                <label for="cardNumber" class="block text-sm font-medium text-gray-700 mb-2">卡号</label>
+                                                <div class="relative">
+                                                    <input type="text" id="cardNumber" name="cardNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-12" placeholder="请输入卡号" value="4761360072118507">
+                                                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                                        <i class="fa fa-credit-card text-gray-400"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 有效期和持卡人姓名 -->
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label for="expiryDate" class="block text-sm font-medium text-gray-700 mb-2">有效期</label>
+                                                    <input type="text" id="expiryDate" name="expiryDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="MM/YY" value="0529">
+                                                </div>
+                                                <div>
+                                                    <label for="holderName" class="block text-sm font-medium text-gray-700 mb-2">持卡人姓名</label>
+                                                    <input type="text" id="holderName" name="holderName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入持卡人姓名" value="Paulette Homenick">
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 安全码 -->
+                                            <div>
+                                                <label for="cvv" class="block text-sm font-medium text-gray-700 mb-2">安全码 (CVV) <span class="text-gray-400 text-xs">（选填）</span></label>
+                                                <div class="relative">
+                                                    <input type="text" id="cvv" name="cvv" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-12" placeholder="CVV（选填）">
+                                                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                                        <i class="fa fa-lock text-gray-400"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 安全提示 -->
+                                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                <div class="flex items-start">
+                                                    <i class="fa fa-shield text-primary text-xl mr-3 mt-1"></i>
+                                                    <div>
+                                                        <h4 class="font-medium text-gray-900 mb-1">安全提示</h4>
+                                                        <p class="text-sm text-gray-600">您的卡片信息将通过256位SSL加密传输，确保支付安全。</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 支付结果显示容器 -->
+                                    <div id="paymentResult" class="hidden mt-4"></div>
+                                </div>
+                                
+                                <!-- 底部固定按钮 -->
+                                <div id="paymentButtonContainer" class="mt-6 pt-6 border-t border-gray-200">
+                                    <button type="button" id="startPaymentBtn" class="w-full bg-primary hover:bg-blue-700 text-white font-medium py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center text-lg">
+                                        <i class="fa fa-credit-card mr-2"></i>
+                                        开始支付
+                                    </button>
+                                    <button type="submit" id="payBtn" class="hidden w-full bg-primary hover:bg-blue-700 text-white font-medium py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center text-lg">
+                                        <i class="fa fa-credit-card mr-2"></i>
+                                        确认支付
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="bg-primary border-t border-blue-700 py-6">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-white text-sm">
+                        &copy; 2026 Evonet. All rights reserved.
+                    </div>
+                    <div class="mt-4 md:mt-0 flex space-x-6">
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">隐私政策</a>
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">服务条款</a>
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 页面加载时更新订单详情
+        window.addEventListener('DOMContentLoaded', function() {
+            updateOrderDetails(
+                document.getElementById('orderId').value,
+                document.getElementById('amount').value,
+                document.getElementById('currency').value
+            );
+        });
+        
+        // 更新订单详情
+        function updateOrderDetails(orderId, amount, currency) {
+            const now = new Date();
+            const orderTime = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            document.getElementById('displayOrderId').textContent = orderId;
+            document.getElementById('displayOrderTime').textContent = orderTime;
+            
+            const currencySymbol = currency === 'USD' ? '$' : currency === 'HKD' ? 'HK$' : '¥';
+            const formattedAmount = `${currencySymbol}${parseFloat(amount).toFixed(2)}`;
+            
+            document.getElementById('displayAmount').textContent = formattedAmount;
+            document.getElementById('displaySubtotal').textContent = formattedAmount;
+            document.getElementById('displayTotal').textContent = formattedAmount;
+        }
+        
+        // 开始支付按钮点击事件
+        document.getElementById('startPaymentBtn').addEventListener('click', function() {
+            // 隐藏安全提示
+            document.getElementById('paymentPlaceholder').classList.add('hidden');
+            // 显示支付方式选择
+            document.getElementById('paymentMethodSelection').classList.remove('hidden');
+            // 隐藏开始支付按钮
+            document.getElementById('startPaymentBtn').classList.add('hidden');
+            // 显示确认支付按钮
+            document.getElementById('payBtn').classList.remove('hidden');
+        });
+        
+        // 支付方式选择
+        document.querySelectorAll('.payment-method-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // 移除所有选中状态
+                document.querySelectorAll('.payment-method-option').forEach(opt => {
+                    opt.classList.remove('selected', 'border-primary');
+                    opt.classList.add('border-gray-300');
+                });
+                
+                // 添加选中状态
+                this.classList.add('selected', 'border-primary');
+                this.classList.remove('border-gray-300');
+            });
+        });
+        
+        // 表单提交处理
+        document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const payBtn = document.getElementById('payBtn');
+            payBtn.disabled = true;
+            payBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 处理中...';
+            
+            try {
+                // 构建支付方式数据
+                const paymentMethod = {
+                    type: 'card',
+                    card: {
+                        cardInfo: {
+                            cardNumber: document.getElementById('cardNumber').value,
+                            expiryDate: document.getElementById('expiryDate').value,
+                            holderName: document.getElementById('holderName').value
+                        }
+                    }
+                };
+                
+                // 构建请求数据
+                const requestData = {
+                    merchantTransID: document.getElementById('orderId').value + Date.now(),
+                    amount: document.getElementById('amount').value,
+                    currency: document.getElementById('currency').value,
+                    paymentMethod: paymentMethod
+                };
+                
+                console.log('Payment request data:', requestData);
+                
+                // 调用后端API
+                const response = await fetch('/api/direct-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                console.log('Payment API response:', result);
+                
+                if (result.success) {
+                    // 自动跳转处理
+                    if (result.result.action) {
+                        if (result.result.action.threeDSData && result.result.action.threeDSData.url) {
+                            // 自动跳转到3DS页面
+                            window.location.href = result.result.action.threeDSData.url;
+                        } else if (result.result.action.redirectData && result.result.action.redirectData.url) {
+                            // 自动跳转到重定向页面
+                            window.location.href = result.result.action.redirectData.url;
+                        } else {
+                            // 显示结果
+                            displayPaymentResult(result.result);
+                        }
+                    } else {
+                        // 显示结果
+                        displayPaymentResult(result.result);
+                    }
+                } else {
+                    throw new Error(result.error || '支付请求失败');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                displayError(error.message);
+            } finally {
+                payBtn.disabled = false;
+                payBtn.innerHTML = '<i class="fa fa-credit-card mr-2"></i> 确认支付';
+            }
+        });
+        
+        // 显示支付结果
+        function displayPaymentResult(result) {
+            const resultDiv = document.getElementById('paymentResult');
+            
+            let details = `
+                <div class="bg-neutral-light p-4 rounded-md">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">支付申请结果</h3>
+                    <div class="space-y-2">
+                        <div><span class="text-neutral">状态码:</span> <span class="font-medium ml-2">${result.result.code}</span></div>
+                        <div><span class="text-neutral">状态信息:</span> <span class="font-medium ml-2">${result.result.message}</span></div>
+            `;
+            
+            // 支付状态
+            if (result.payment) {
+                details += `<div><span class="text-neutral">支付状态:</span> <span class="font-medium ml-2">${result.payment.status}</span></div>`;
+                if (result.payment.merchantTransInfo) {
+                    details += `<div><span class="text-neutral">商户交易ID:</span> <span class="font-medium ml-2">${result.payment.merchantTransInfo.merchantTransID}</span></div>`;
+                }
+            }
+            
+            details += `
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = details;
+            resultDiv.classList.remove('hidden');
+        }
+        
+        // 显示错误信息
+        function displayError(message) {
+            const resultDiv = document.getElementById('paymentResult');
+            
+            resultDiv.innerHTML = `
+                <div class="bg-red-50 border border-red-200 p-4 rounded-md">
+                    <div class="flex items-center">
+                        <i class="fa fa-exclamation-circle text-red-500 text-xl mr-3"></i>
+                        <div>
+                            <h3 class="text-lg font-medium text-red-900 mb-1">支付失败</h3>
+                            <p class="text-sm text-red-700">${message}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            resultDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

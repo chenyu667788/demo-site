@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅支付 - Direct API Subscription Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'rgb(2, 117, 221)',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-[rgb(2,117,221)] border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="http://localhost:8080/" class="text-white text-sm font-medium hover:underline mr-6">Back to Site</a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Direct API Subscription</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:underline">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
+                        <div class="bg-gray-50 p-8 border-r border-gray-200">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">订阅信息</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">订阅方案</h3>
+                                    <div id="subscriptionInfo" class="space-y-3">
+                                        <div class="animate-pulse space-y-3">
+                                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                                            <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">订阅周期</h3>
+                                    <div id="billingInfo" class="space-y-3">
+                                        <div class="animate-pulse space-y-3">
+                                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                                            <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">方案详情</h3>
+                                    <div id="planDetails">
+                                        <div class="animate-pulse space-y-3">
+                                            <div class="h-4 bg-gray-200 rounded w-full"></div>
+                                            <div class="h-4 bg-gray-200 rounded w-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-8 flex flex-col">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">支付详情</h2>
+                            
+                            <form id="paymentForm" class="flex-grow flex flex-col">
+                                <input type="hidden" id="subscriptionId" name="subscriptionId" value="">
+                                
+                                <div class="flex-grow space-y-6">
+                                    <div>
+                                        <h3 class="text-lg font-medium text-gray-900 mb-4">支付方式</h3>
+                                        <div class="space-y-4">
+                                            <div class="border border-gray-300 rounded-md p-4">
+                                                <div class="flex items-center">
+                                                    <input type="radio" id="payment-card" name="paymentMethod" value="card" class="h-4 w-4 text-primary focus:ring-primary" checked>
+                                                    <label for="payment-card" class="ml-2 block text-sm font-medium text-gray-900">银行卡</label>
+                                                </div>
+                                                <div id="card-details" class="mt-4 space-y-3">
+                                                    <div>
+                                                        <label for="cardNumber" class="block text-sm font-medium text-gray-700 mb-1">卡号</label>
+                                                        <input type="text" id="cardNumber" name="cardNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入卡号" value="4761360072118507">
+                                                    </div>
+                                                    <div class="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label for="expiryDate" class="block text-sm font-medium text-gray-700 mb-1">有效期</label>
+                                                            <input type="text" id="expiryDate" name="expiryDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="MMYY" value="0529">
+                                                        </div>
+                                                        <div>
+                                                            <label for="holderName" class="block text-sm font-medium text-gray-700 mb-1">持卡人姓名</label>
+                                                            <input type="text" id="holderName" name="holderName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入持卡人姓名" value="Paulette Homenick">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="border border-gray-300 rounded-md p-4">
+                                                <div class="flex items-center">
+                                                    <input type="radio" id="payment-ewallet" name="paymentMethod" value="e-wallet" class="h-4 w-4 text-primary focus:ring-primary">
+                                                    <label for="payment-ewallet" class="ml-2 block text-sm font-medium text-gray-900">电子钱包</label>
+                                                </div>
+                                                <div id="ewallet-details" class="mt-4 space-y-3 hidden">
+                                                    <div>
+                                                        <label for="walletBrand" class="block text-sm font-medium text-gray-700 mb-1">钱包品牌</label>
+                                                        <select id="walletBrand" name="walletBrand" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                            <option value="Merpay">Merpay</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-yellow-50 rounded-lg p-4">
+                                        <label class="flex items-start">
+                                            <input type="checkbox" id="saveCard" name="saveCard" checked
+                                                class="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                            <span class="ml-3 text-sm text-gray-600">
+                                                <strong>保存卡片信息用于自动续费</strong><br>
+                                                <span class="text-xs text-gray-500">勾选后，卡片信息将被安全保存，用于后续订阅自动扣费</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 pt-6 border-t border-gray-200">
+                                    <div class="flex justify-between items-center">
+                                        <a href="/" class="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                                            <i class="fa fa-arrow-left mr-2"></i>
+                                            返回重新选择
+                                        </a>
+                                        <button type="submit" id="payBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-8 rounded-lg transition-colors duration-200 flex items-center justify-center text-lg">
+                                            <i class="fa fa-credit-card mr-2"></i>
+                                            立即支付
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="paymentResult" class="mt-6 hidden">
+                    <div class="bg-neutral-light p-4 rounded-md">
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">支付申请结果</h3>
+                        <div class="space-y-2" id="resultDetails">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-[rgb(2,117,221)] py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-white">© 2026 Direct API Subscription Demo. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-sm text-white hover:underline">隐私政策</a>
+                        <a href="#" class="text-sm text-white hover:underline">服务条款</a>
+                        <a href="#" class="text-sm text-white hover:underline">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentSubscription = null;
+        
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function formatDateShort(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        async function loadSubscriptionInfo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const subscriptionId = urlParams.get('subscriptionId');
+            
+            if (!subscriptionId) {
+                document.getElementById('subscriptionInfo').innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fa fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+                        <p class="text-red-500">未找到订阅信息</p>
+                        <a href="/" class="mt-4 inline-block text-primary hover:underline">返回首页</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            document.getElementById('subscriptionId').value = subscriptionId;
+            
+            try {
+                const response = await fetch(`/api/subscription/${subscriptionId}`);
+                const data = await response.json();
+                
+                if (data.success && data.subscription) {
+                    currentSubscription = data.subscription;
+                    const sub = data.subscription;
+                    const plan = sub.plan;
+                    
+                    document.getElementById('subscriptionInfo').innerHTML = `
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-neutral">订阅方案</span>
+                                <span class="font-semibold text-gray-900">${plan.name}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-neutral">订阅金额</span>
+                                <span class="font-bold text-xl text-primary">$${plan.price}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('billingInfo').innerHTML = `
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-neutral">首次订阅时间</span>
+                                <span class="font-medium text-gray-900">${formatDate(sub.createdAt)}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-neutral">当前周期开始</span>
+                                <span class="font-medium text-gray-900">${formatDateShort(sub.currentPeriodStart)}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-neutral">到期/自动扣款时间</span>
+                                <span class="font-medium text-primary">${formatDateShort(sub.nextBillingDate)}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('planDetails').innerHTML = `
+                        <div>
+                            <p class="text-gray-600 mb-4">${plan.description}</p>
+                            <h4 class="font-semibold text-gray-900 mb-3">方案包含：</h4>
+                            <ul class="space-y-2">
+                                ${plan.features.map(feature => `
+                                    <li class="flex items-center text-sm text-gray-600">
+                                        <i class="fa fa-check-circle text-secondary mr-3"></i>
+                                        ${feature}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Subscription not found');
+                }
+            } catch (error) {
+                console.error('Failed to load subscription:', error);
+                document.getElementById('subscriptionInfo').innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fa fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+                        <p class="text-red-500">加载订阅信息失败</p>
+                        <a href="/" class="mt-4 inline-block text-primary hover:underline">返回首页</a>
+                    </div>
+                `;
+            }
+        }
+        
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.getElementById('card-details').classList.add('hidden');
+                document.getElementById('ewallet-details').classList.add('hidden');
+                
+                if (this.value === 'card') {
+                    document.getElementById('card-details').classList.remove('hidden');
+                } else if (this.value === 'e-wallet') {
+                    document.getElementById('ewallet-details').classList.remove('hidden');
+                }
+            });
+        });
+        
+        document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const payBtn = document.getElementById('payBtn');
+            payBtn.disabled = true;
+            payBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 处理中...';
+            
+            try {
+                const subscriptionId = document.getElementById('subscriptionId').value;
+                if (!subscriptionId) {
+                    throw new Error('未找到订阅ID');
+                }
+                
+                const paymentMethodType = document.querySelector('input[name="paymentMethod"]:checked').value;
+                let paymentMethod = { type: paymentMethodType };
+                
+                if (paymentMethodType === 'card') {
+                    paymentMethod.card = {
+                        cardInfo: {
+                            cardNumber: document.getElementById('cardNumber').value,
+                            expiryDate: document.getElementById('expiryDate').value,
+                            holderName: document.getElementById('holderName').value
+                        }
+                    };
+                } else if (paymentMethodType === 'e-wallet') {
+                    paymentMethod['e-wallet'] = {
+                        paymentBrand: document.getElementById('walletBrand').value
+                    };
+                }
+                
+                const saveCard = document.getElementById('saveCard').checked;
+                
+                const requestData = {
+                    paymentMethod: paymentMethod,
+                    saveCard: saveCard
+                };
+                
+                console.log('Subscription payment request data:', requestData);
+                
+                const response = await fetch(`/api/subscription/${subscriptionId}/direct-payment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                console.log('Subscription payment API response:', result);
+                
+                if (result.success) {
+                    displayPaymentResult(result.result, result.message);
+                    
+                    if (result.result.result && result.result.result.code === 'S0000') {
+                        setTimeout(() => {
+                            window.location.href = `/success.html?subscriptionId=${subscriptionId}`;
+                        }, 2000);
+                    }
+                } else {
+                    throw new Error(result.message || result.error || '支付请求失败');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                displayError(error.message);
+            } finally {
+                payBtn.disabled = false;
+                payBtn.innerHTML = '<i class="fa fa-credit-card mr-2"></i> 立即支付';
+            }
+        });
+        
+        function displayPaymentResult(result, message) {
+            const resultDiv = document.getElementById('paymentResult');
+            const resultDetails = document.getElementById('resultDetails');
+            
+            let details = '';
+            
+            if (result.result) {
+                details += `<div><span class="text-neutral">状态码:</span> <span class="font-medium ml-2 ${result.result.code === 'S0000' ? 'text-green-600' : 'text-red-600'}">${result.result.code}</span></div>`;
+                details += `<div><span class="text-neutral">状态信息:</span> <span class="font-medium ml-2">${result.result.message}</span></div>`;
+            }
+            
+            if (result.payment) {
+                details += `<div><span class="text-neutral">支付状态:</span> <span class="font-medium ml-2">${result.payment.status}</span></div>`;
+                if (result.payment.merchantTransInfo) {
+                    details += `<div><span class="text-neutral">商户交易ID:</span> <span class="font-medium ml-2">${result.payment.merchantTransInfo.merchantTransID}</span></div>`;
+                }
+            }
+            
+            if (result.action) {
+                details += `<div><span class="text-neutral">操作类型:</span> <span class="font-medium ml-2">${result.action.type}</span></div>`;
+                if (result.action.threeDSData && result.action.threeDSData.url) {
+                    details += `<div class="mt-4"><a href="${result.action.threeDSData.url}" target="_blank" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"><i class="fa fa-external-link mr-2"></i>点击完成3DS验证</a></div>`;
+                } else if (result.action.redirectData && result.action.redirectData.url) {
+                    details += `<div class="mt-4"><a href="${result.action.redirectData.url}" target="_blank" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"><i class="fa fa-external-link mr-2"></i>点击完成支付</a></div>`;
+                }
+            }
+            
+            if (result.token) {
+                details += `<div class="mt-2 p-2 bg-green-50 rounded"><i class="fa fa-check-circle text-green-500 mr-2"></i><span class="text-green-700">卡片信息已保存，可用于自动续费</span></div>`;
+            }
+            
+            resultDetails.innerHTML = details;
+            resultDiv.classList.remove('hidden');
+        }
+        
+        function displayError(message) {
+            const resultDiv = document.getElementById('paymentResult');
+            const resultDetails = document.getElementById('resultDetails');
+            
+            resultDetails.innerHTML = `<div class="text-red-600"><i class="fa fa-exclamation-circle mr-2"></i>${message}</div>`;
+            resultDiv.classList.remove('hidden');
+        }
+        
+        loadSubscriptionInfo();
+    </script>
+</body>
+</html>

@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evonet Drop-in 支付演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB', // 改为蓝色
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+    <!-- 引入Evonet Drop-in SDK via CDN with fallback -->
+    <script>
+        // 尝试从CDN加载Drop-in SDK
+        (function() {
+            // 定义SDK加载状态
+            window.sdkLoaded = false;
+            
+            // 尝试多个CDN URL
+            var cdnUrls = [
+                'https://cdn.jsdelivr.net/npm/cil-dropin-components@latest/dist/index.min.js',
+                'https://unpkg.com/cil-dropin-components@latest/dist/index.min.js'
+            ];
+            
+            var currentUrlIndex = 0;
+            
+            function loadSDK(url) {
+                console.log('Loading Drop-in SDK from:', url);
+                var script = document.createElement('script');
+                script.src = url;
+                script.onload = function() {
+                    console.log('Drop-in SDK loaded successfully from:', url);
+                    window.sdkLoaded = true;
+                    // 验证SDK对象是否存在
+                    console.log('SDK loaded, checking available objects:', {
+                        CILDropin: typeof CILDropin !== 'undefined',
+                        DropInSDK: typeof DropInSDK !== 'undefined',
+                        cil: typeof cil !== 'undefined',
+                        evonet: typeof evonet !== 'undefined'
+                    });
+                };
+                script.onerror = function() {
+                    console.error('Failed to load Drop-in SDK from:', url);
+                    currentUrlIndex++;
+                    if (currentUrlIndex < cdnUrls.length) {
+                        // 尝试下一个CDN URL
+                        loadSDK(cdnUrls[currentUrlIndex]);
+                    } else {
+                        // 尝试使用本地fallback
+                        console.error('All CDN URLs failed, using fallback');
+                        loadFallback();
+                    }
+                };
+                // 添加超时处理
+                setTimeout(function() {
+                    if (!window.sdkLoaded) {
+                        console.error('SDK loading timed out for:', url);
+                        script.onerror();
+                    }
+                }, 10000); // 10秒超时
+                document.head.appendChild(script);
+            }
+            
+            function loadFallback() {
+                console.log('Loading Drop-in SDK from fallback');
+                var fallbackScript = document.createElement('script');
+                fallbackScript.src = 'index.min.js';
+                fallbackScript.onload = function() {
+                    console.log('Drop-in SDK loaded from fallback');
+                    window.sdkLoaded = true;
+                    // 验证SDK对象是否存在
+                    console.log('Fallback SDK loaded, checking available objects:', {
+                        CILDropin: typeof CILDropin !== 'undefined',
+                        DropInSDK: typeof DropInSDK !== 'undefined',
+                        cil: typeof cil !== 'undefined',
+                        evonet: typeof evonet !== 'undefined'
+                    });
+                };
+                fallbackScript.onerror = function() {
+                    console.error('Failed to load Drop-in SDK from fallback');
+                    window.sdkLoaded = false;
+                };
+                // 添加超时处理
+                setTimeout(function() {
+                    if (!window.sdkLoaded) {
+                        console.error('Fallback loading timed out');
+                        fallbackScript.onerror();
+                    }
+                }, 10000); // 10秒超时
+                document.head.appendChild(fallbackScript);
+            }
+            
+            // 开始加载SDK
+            loadSDK(cdnUrls[0]);
+        })();
+    </script>
+
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <!-- 头部导航 -->
+        <header class="bg-primary border-b border-blue-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="http://localhost:8080/" class="flex items-center text-white hover:text-blue-100 transition-colors mr-6">
+                            <span class="text-sm font-medium">Back to Site</span>
+                        </a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Evonet Drop-in</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-blue-100 transition-colors">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="flex-grow">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
+                        <!-- 左栏：订单详情 -->
+                        <div class="bg-gray-50 p-8 border-r border-gray-200">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">订单详情</h2>
+                            
+                            <div class="space-y-6">
+                                <!-- 订单信息卡片 -->
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">订单信息</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">订单编号:</span>
+                                            <span id="displayOrderId" class="font-medium text-gray-900">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">创建时间:</span>
+                                            <span id="displayOrderTime" class="font-medium text-gray-900">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 商品信息卡片 -->
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">商品信息</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
+                                                    <i class="fa fa-shopping-bag text-gray-400 text-2xl"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">示例商品</p>
+                                                    <p class="text-sm text-gray-500">数量: 1</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 价格详情卡片 -->
+                                <div class="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">价格详情</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">商品金额:</span>
+                                            <span id="displayAmount" class="font-medium text-gray-900">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">运费:</span>
+                                            <span class="font-medium text-gray-900">$0.00</span>
+                                        </div>
+                                        <div class="border-t border-gray-200 pt-3 mt-3">
+                                            <div class="flex justify-between">
+                                                <span class="text-lg font-semibold text-gray-900">订单总额:</span>
+                                                <span id="displayTotal" class="text-lg font-bold text-primary">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右栏：支付详情 -->
+                        <div class="bg-white p-8 flex flex-col">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">支付详情</h2>
+                            
+                            <!-- 支付表单 -->
+                            <form id="paymentForm" class="flex-grow flex flex-col">
+                                <!-- 隐藏的输入字段 -->
+                                <input type="hidden" id="orderId" name="orderId" value="">
+                                <input type="hidden" id="sessionId" name="sessionId" value="">
+                                <input type="hidden" id="reference" name="reference" value="test_user">
+                                
+                                <!-- 金额输入区域 -->
+                                <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">订单信息</h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="amountInput" class="block text-sm font-medium text-gray-700 mb-2">支付金额</label>
+                                            <input type="number" id="amountInput" name="amountInput" 
+                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                   placeholder="请输入金额" step="0.01" min="0.01" required>
+                                        </div>
+                                        <div>
+                                            <label for="currencySelect" class="block text-sm font-medium text-gray-700 mb-2">货币</label>
+                                            <select id="currencySelect" name="currencySelect"
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                <option value="USD">USD - 美元</option>
+                                                <option value="HKD">HKD - 港币</option>
+                                                <option value="CNY">CNY - 人民币</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <input type="hidden" id="amount" name="amount" value="">
+                                <input type="hidden" id="currency" name="currency" value="USD">
+                                
+                                <!-- Drop-in 容器 -->
+                                <div class="flex-grow">
+                                    <!-- 初始状态：安全提示 -->
+                                    <div id="paymentPlaceholder" class="border border-gray-300 rounded-lg p-8 min-h-[400px] flex flex-col items-center justify-center">
+                                        <div class="text-center space-y-6">
+                                            <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                                                <i class="fa fa-shield text-primary text-3xl"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-xl font-semibold text-gray-900 mb-2">安全支付</h3>
+                                                <p class="text-gray-600">您的支付信息将被安全加密处理</p>
+                                            </div>
+                                            <div class="space-y-3 text-left max-w-sm mx-auto">
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fa fa-check-circle text-green-500 mr-3"></i>
+                                                    <span>256位SSL加密保护</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fa fa-check-circle text-green-500 mr-3"></i>
+                                                    <span>PCI DSS认证支付网关</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fa fa-check-circle text-green-500 mr-3"></i>
+                                                    <span>实时交易监控</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Drop-in 插件容器 -->
+                                    <div id="dropInApp" class="hidden"></div>
+                                    
+                                    <!-- 支付结果显示容器 -->
+                                    <div id="paymentResult" class="hidden mt-4"></div>
+                                </div>
+                                
+                                <!-- 底部固定按钮 -->
+                                <div id="paymentButtonContainer" class="mt-6 pt-6 border-t border-gray-200">
+                                    <button type="submit" id="payBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center text-lg">
+                                        <i class="fa fa-credit-card mr-2"></i>
+                                        立即支付
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="bg-primary border-t border-blue-700 py-6">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-white text-sm">
+                        &copy; 2026 Evonet. All rights reserved.
+                    </div>
+                    <div class="mt-4 md:mt-0 flex space-x-6">
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">隐私政策</a>
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">服务条款</a>
+                        <a href="#" class="text-white hover:text-blue-100 text-sm transition-colors">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 全局变量
+        let dropinInstance = null;
+        
+        // 初始化Drop-in SDK
+        function initDropinSDK(sessionId) {
+            return new Promise((resolve, reject) => {
+                const SDK = getSDK();
+                if (!SDK) {
+                    console.error('SDK not found in getSDK()');
+                    reject(new Error('Drop-in SDK not loaded'));
+                    return;
+                }
+                
+                try {
+                    // 按照Evonet集成文档初始化SDK
+                    console.log('=== 开始初始化 SDK ===');
+                    console.log('Session ID:', sessionId);
+                    console.log('SDK Object:', SDK);
+                    console.log('SDK Constructor Name:', SDK.constructor.name);
+                    console.log('SDK methods:', Object.keys(SDK.prototype || SDK));
+                    
+                    // 检查容器是否存在
+                    const container = document.getElementById('dropInApp');
+                    console.log('Container element:', container);
+                    console.log('Container display:', container ? window.getComputedStyle(container).display : 'not found');
+                    
+                    const sdkConfig = {
+                        id: '#dropInApp',
+                        type: 'payment',
+                        sessionID: sessionId,
+                        locale: 'zh-CN',
+                        mode: 'embedded',
+                        environment: 'UAT',
+                        appearance: {
+                            colorBackground: '#fff'
+                        },
+                        payment_completed: function(params) {
+                            console.log('=== payment_completed 回调触发 ===');
+                            console.log('回调参数:', params);
+                            console.log('参数类型:', typeof params);
+                            console.log('参数键:', Object.keys(params || {}));
+                            handlePaymentCompleted(params);
+                        },
+                        payment_failed: function(params) {
+                            console.log('=== payment_failed 回调触发 ===');
+                            console.log('回调参数:', params);
+                            handlePaymentFailed(params);
+                        },
+                        payment_not_preformed: function(params) {
+                            console.log('=== payment_not_preformed 回调触发 ===');
+                            console.log('回调参数:', params);
+                            handlePaymentNotPreformed(params);
+                        },
+                        payment_cancelled: function(params) {
+                            console.log('=== payment_cancelled 回调触发 ===');
+                            console.log('回调参数:', params);
+                            handlePaymentCancelled(params);
+                        }
+                    };
+                    
+                    console.log('SDK Config:', JSON.stringify(sdkConfig, null, 2));
+                    
+                    // 尝试使用SDK.create方法
+                    let sdk;
+                    if (typeof SDK.create === 'function') {
+                        console.log('=== Using SDK.create method ===');
+                        sdk = SDK.create(sdkConfig);
+                    } else if (typeof SDK.init === 'function') {
+                        console.log('=== Using SDK.init method ===');
+                        sdk = SDK.init(sdkConfig);
+                    } else {
+                        console.log('=== Using new SDK() constructor ===');
+                        sdk = new SDK(sdkConfig);
+                    }
+                    
+                    console.log('=== SDK instance created successfully ===');
+                    console.log('SDK instance:', sdk);
+                    console.log('SDK instance methods:', Object.keys(sdk || {}));
+                    
+                    // 检查容器内容
+                    setTimeout(() => {
+                        const container = document.getElementById('dropInApp');
+                        console.log('=== SDK渲染后容器检查 ===');
+                        console.log('Container innerHTML length:', container ? container.innerHTML.length : 0);
+                        console.log('Container children:', container ? container.children.length : 0);
+                        if (container && container.children.length > 0) {
+                            console.log('First child:', container.children[0]);
+                            console.log('First child innerHTML:', container.children[0].innerHTML);
+                        }
+                        console.log('Container innerHTML (first 500 chars):', container ? container.innerHTML.substring(0, 500) : 'empty');
+                    }, 2000);
+                    
+                    // 再次检查容器内容（延迟5秒）
+                    setTimeout(() => {
+                        const container = document.getElementById('dropInApp');
+                        console.log('=== SDK渲染后容器检查（5秒后）===');
+                        console.log('Container innerHTML length:', container ? container.innerHTML.length : 0);
+                        console.log('Container children:', container ? container.children.length : 0);
+                        if (container && container.children.length > 0) {
+                            console.log('First child:', container.children[0]);
+                        }
+                    }, 5000);
+                    
+                    resolve(sdk);
+                } catch (error) {
+                    console.error('=== Error initializing SDK ===');
+                    console.error('Error:', error);
+                    console.error('Error message:', error.message);
+                    console.error('Error stack:', error.stack);
+                    reject(error);
+                }
+            });
+        }
+        
+        // 检查SDK是否加载
+        function checkSDKLoaded() {
+            // 检查所有可能的SDK对象名称
+            return typeof CILDropin !== 'undefined' || 
+                   typeof DropInSDK !== 'undefined' || 
+                   typeof cil !== 'undefined' || 
+                   typeof evonet !== 'undefined';
+        }
+        
+        // 获取SDK对象
+        function getSDK() {
+            if (typeof CILDropin !== 'undefined') return CILDropin;
+            if (typeof DropInSDK !== 'undefined') return DropInSDK;
+            if (typeof cil !== 'undefined') return cil;
+            if (typeof evonet !== 'undefined') return evonet;
+            return null;
+        }
+        
+        // 延迟检查SDK加载状态
+        function checkSDKWithDelay() {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 20; // 增加尝试次数
+                const interval = 1000; // 增加检查间隔
+                
+                function check() {
+                    attempts++;
+                    const sdk = getSDK();
+                    console.log(`Checking SDK loaded status (attempt ${attempts}/${maxAttempts}):`, {
+                        sdkAvailable: sdk !== null,
+                        sdkType: sdk ? sdk.constructor.name : 'none',
+                        windowSdkLoaded: window.sdkLoaded
+                    });
+                    if (sdk !== null) {
+                        // 只要SDK存在，就认为SDK已加载
+                        window.sdkLoaded = true;
+                        console.log('SDK loaded successfully:', sdk.constructor.name);
+                        resolve(true);
+                    } else if (attempts < maxAttempts) {
+                        setTimeout(check, interval);
+                    } else {
+                        console.error('SDK loading timed out after', maxAttempts, 'attempts');
+                        resolve(false);
+                    }
+                }
+                
+                check();
+            });
+        }
+        
+        // 处理支付回调事件
+        function handlePaymentCompleted(params) {
+            console.log('=== payment_completed 回调触发 ===');
+            console.log('回调参数:', params);
+            console.log('回调参数详情:', JSON.stringify(params, null, 2));
+            const result = { type: 'payment_completed', ...params };
+            
+            // 记录 merchantTransID（用于后续查询订单详情或退款）
+            if (params.merchantTransID) {
+                console.log('商户交易 ID:', params.merchantTransID);
+            }
+            
+            // 检查是否有action字段（根据action flow文档）
+            if (params.action) {
+                console.log('Action type:', params.action.type);
+                handlePaymentAction(params.action, result);
+                return result;
+            }
+            
+            // 检查所有可能的二维码字段（兼容旧版本）
+            const qrCodeUrl = params.qrCode || params.qr_code || params.qrUrl || params.qr_url || 
+                              params.qrCodeUrl || params.qr_code_url || params.codeUrl || params.code_url ||
+                              params.qr || params.QRCode || params.QR;
+            
+            if (qrCodeUrl) {
+                console.log('微信支付二维码 URL:', qrCodeUrl);
+                displayPaymentStatus('微信支付二维码', 'info', result);
+                displayQRCode(qrCodeUrl);
+            } else {
+                // 如果没有二维码，检查是否有跳转URL
+                const redirectUrl = params.redirectUrl || params.redirect_url || params.url || params.linkUrl;
+                if (redirectUrl) {
+                    console.log('支付跳转 URL:', redirectUrl);
+                    window.location.href = redirectUrl;
+                } else {
+                    displayPaymentStatus('支付成功', 'success', result);
+                    // 跳转到订单详情页
+                    setTimeout(() => {
+                        // 使用页面中已生成的订单编号
+                        const orderId = document.getElementById('orderId').value;
+                        const orderInfo = {
+                            orderId: orderId,
+                            orderTime: new Date().toISOString(),
+                            amount: document.getElementById('amount').value,
+                            currency: document.getElementById('currency').value,
+                            status: 'success',
+                            transactionId: result.merchantTransID || '-',
+                            paymentMethod: 'Drop-in'
+                        };
+                        const queryString = new URLSearchParams(orderInfo).toString();
+                        window.location.href = `/order-tracking.html?${queryString}`;
+                    }, 2000);
+                }
+            }
+            return result;
+        }
+        
+        // 处理支付action
+        function handlePaymentAction(action, result) {
+            console.log('=== 处理支付 Action ===');
+            console.log('Action:', action);
+            
+            switch (action.type) {
+                case 'redirectUser':
+                    // 通过 redirectData.url 跳转后完成支付
+                    if (action.redirectData && action.redirectData.url) {
+                        console.log('Redirect URL:', action.redirectData.url);
+                        displayPaymentStatus('正在跳转到微信支付...', 'info', result);
+                        window.location.href = action.redirectData.url;
+                    } else {
+                        console.error('redirectUser action missing redirectData.url');
+                        displayPaymentStatus('支付跳转失败', 'error', result);
+                    }
+                    break;
+                    
+                case 'presentQRCode':
+                    // 通过 qrData.qrCode 返回的字符串，转换成二维码后，扫码完成支付
+                    if (action.qrData && action.qrData.qrCode) {
+                        console.log('QR Code:', action.qrData.qrCode);
+                        displayPaymentStatus('微信支付二维码', 'info', result);
+                        displayQRCode(action.qrData.qrCode);
+                    } else {
+                        console.error('presentQRCode action missing qrData.qrCode');
+                        displayPaymentStatus('二维码生成失败', 'error', result);
+                    }
+                    break;
+                    
+                case 'invokeWallet':
+                    // 通过 walletData.paymentString 返回的字符串作为入参，调用 WeChat Pay 官方 SDK 完成支付流程
+                    if (action.walletData && action.walletData.paymentString) {
+                        console.log('Payment String:', action.walletData.paymentString);
+                        displayPaymentStatus('正在调用微信支付...', 'info', result);
+                        // 这里需要调用微信支付官方SDK，暂时显示提示
+                        alert('请使用微信支付完成支付');
+                    } else {
+                        console.error('invokeWallet action missing walletData.paymentString');
+                        displayPaymentStatus('微信支付调用失败', 'error', result);
+                    }
+                    break;
+                    
+                default:
+                    console.warn('Unknown action type:', action.type);
+                    displayPaymentStatus('支付方式不支持', 'error', result);
+            }
+        }
+        
+        // 显示二维码
+        function displayQRCode(qrCodeData) {
+            console.log('=== displayQRCode called ===');
+            console.log('qrCodeData:', qrCodeData);
+            console.log('qrCodeData type:', typeof qrCodeData);
+            
+            const dropInApp = document.getElementById('dropInApp');
+            
+            // 判断qrCodeData是URL还是字符串
+            const isUrl = qrCodeData.startsWith('http://') || qrCodeData.startsWith('https://') || 
+                          qrCodeData.startsWith('data:image') || qrCodeData.startsWith('/');
+            
+            console.log('Is URL:', isUrl);
+            
+            if (isUrl) {
+                // 如果是URL，直接显示图片
+                dropInApp.innerHTML = `
+                    <div class="text-center p-8">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">微信支付</h3>
+                        <p class="text-gray-600 mb-4">请使用微信扫描下方二维码完成支付</p>
+                        <div class="flex justify-center mb-4">
+                            <img src="${qrCodeData}" alt="微信支付二维码" style="max-width: 300px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                        <p class="text-sm text-gray-500">支付完成后，页面将自动跳转</p>
+                    </div>
+                `;
+            } else {
+                // 如果是字符串，使用在线二维码生成服务
+                console.log('Generating QR code from string using online service...');
+                
+                // 使用Google Chart API生成二维码
+                const qrCodeUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(qrCodeData)}&choe=UTF-8`;
+                
+                dropInApp.innerHTML = `
+                    <div class="text-center p-8">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">微信支付</h3>
+                        <p class="text-gray-600 mb-4">请使用微信扫描下方二维码完成支付</p>
+                        <div class="flex justify-center mb-4">
+                            <img src="${qrCodeUrl}" alt="微信支付二维码" style="max-width: 300px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                        <p class="text-sm text-gray-500">支付完成后，页面将自动跳转</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function handlePaymentFailed(params) {
+            const result = {
+                type: 'payment_failed',
+                ...params,
+                code: params.code || '错误码',
+                message: params.message || '错误信息'
+            };
+            console.error('支付失败:', result);
+            displayPaymentStatus(`支付失败: ${result.message}`, 'error', result);
+            
+            // 添加重试按钮
+            addRetryButton();
+            
+            return result;
+        }
+        
+        function handlePaymentNotPreformed(params) {
+            const result = {
+                type: 'payment_not_preformed',
+                ...params,
+                code: params.code || '响应码',
+                message: params.message || '响应信息'
+            };
+            console.warn('支付未执行:', result);
+            displayPaymentStatus('支付未执行，请重试', 'warning', result);
+            
+            // 添加重试按钮
+            addRetryButton();
+            
+            return result;
+        }
+        
+        function handlePaymentCancelled(params) {
+            const result = { type: 'payment_cancelled', ...params };
+            console.log('支付取消:', result);
+            displayPaymentStatus('支付已取消', 'info', result);
+            
+            // 添加重试按钮
+            addRetryButton();
+            
+            return result;
+        }
+        
+        // 添加重试按钮
+        function addRetryButton() {
+            const dropInApp = document.getElementById('dropInApp');
+            const retryButton = document.createElement('button');
+            retryButton.id = 'retryBtn';
+            retryButton.className = 'mt-4 w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200';
+            retryButton.innerHTML = '<i class="fa fa-refresh mr-2"></i>重新支付';
+            retryButton.onclick = function() {
+                console.log('=== 用户点击重新支付 ===');
+                // 恢复初始状态
+                document.getElementById('paymentPlaceholder').classList.remove('hidden');
+                document.getElementById('paymentButtonContainer').classList.remove('hidden');
+                document.getElementById('dropInApp').classList.add('hidden');
+                document.getElementById('paymentResult').classList.add('hidden');
+                // 清空Drop-in容器
+                dropInApp.innerHTML = '';
+            };
+            
+            // 检查是否已经存在重试按钮
+            const existingRetryBtn = document.getElementById('retryBtn');
+            if (!existingRetryBtn) {
+                dropInApp.appendChild(retryButton);
+            }
+        }
+        
+        function displayPaymentStatus(message, statusType, result) {
+            const statusEl = document.getElementById('paymentResult');
+            
+            // 根据状态类型设置颜色
+            let bgColor, borderColor, iconColor, icon;
+            switch (statusType) {
+                case 'success':
+                    bgColor = 'bg-green-50';
+                    borderColor = 'border-green-200';
+                    iconColor = 'text-green-500';
+                    icon = 'fa-check-circle';
+                    break;
+                case 'error':
+                    bgColor = 'bg-red-50';
+                    borderColor = 'border-red-200';
+                    iconColor = 'text-red-500';
+                    icon = 'fa-times-circle';
+                    break;
+                case 'warning':
+                    bgColor = 'bg-yellow-50';
+                    borderColor = 'border-yellow-200';
+                    iconColor = 'text-yellow-500';
+                    icon = 'fa-exclamation-triangle';
+                    break;
+                case 'info':
+                default:
+                    bgColor = 'bg-blue-50';
+                    borderColor = 'border-blue-200';
+                    iconColor = 'text-blue-500';
+                    icon = 'fa-info-circle';
+            }
+            
+            statusEl.innerHTML = `
+                <div class="${bgColor} ${borderColor} border rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="fa ${icon} ${iconColor} text-xl mr-3 mt-0.5"></i>
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">${message}</h3>
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">类型:</span>
+                                    <span class="font-medium text-gray-900">${result.type}</span>
+                                </div>
+                                ${result.merchantTransID ? `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">商户交易 ID:</span>
+                                    <span class="font-medium text-gray-900">${result.merchantTransID}</span>
+                                </div>
+                                ` : ''}
+                                ${result.sessionID ? `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Session ID:</span>
+                                    <span class="font-medium text-gray-900">${result.sessionID}</span>
+                                </div>
+                                ` : ''}
+                                ${result.code ? `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">错误码:</span>
+                                    <span class="font-medium text-gray-900">${result.code}</span>
+                                </div>
+                                ` : ''}
+                                ${result.message ? `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">信息:</span>
+                                    <span class="font-medium text-gray-900">${result.message}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            statusEl.classList.remove('hidden');
+        }
+        
+        // 初始化Drop-in
+        async function initDropin() {
+            console.log('Initializing Drop-in...');
+            
+            // 显示加载状态
+            const payBtn = document.getElementById('payBtn');
+            payBtn.disabled = true;
+            payBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 加载中...';
+            
+            // 检查是否已经创建过支付会话
+            const existingSessionId = document.getElementById('sessionId').value;
+            if (existingSessionId) {
+                console.log('Session already exists:', existingSessionId);
+                payBtn.disabled = false;
+                payBtn.innerHTML = '<i class="fa fa-credit-card mr-2"></i> 立即支付';
+                return;
+            }
+            
+            // 检查是否已经有订单编号，如果没有则生成
+            let orderId = document.getElementById('orderId').value;
+            
+            // 从输入框获取金额和货币
+            const amountInput = document.getElementById('amountInput').value;
+            const currencySelect = document.getElementById('currencySelect').value;
+            
+            // 验证金额输入
+            if (!amountInput || parseFloat(amountInput) <= 0) {
+                alert('请输入有效的支付金额');
+                payBtn.disabled = false;
+                payBtn.innerHTML = '<i class="fa fa-credit-card mr-2"></i> 立即支付';
+                return;
+            }
+            
+            const amount = parseFloat(amountInput).toFixed(2);
+            const currency = currencySelect;
+            
+            // 保存到隐藏字段
+            document.getElementById('amount').value = amount;
+            document.getElementById('currency').value = currency;
+            
+            if (!orderId) {
+                // 根据金额和货币生成唯一的订单编号
+                orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 10000)}-${Math.random().toString(36).substr(2, 9)}`;
+                document.getElementById('orderId').value = orderId;
+                console.log('Generated new orderId:', orderId);
+                console.log('Amount:', amount, 'Currency:', currency);
+            } else {
+                console.log('Using existing orderId:', orderId);
+            }
+            
+            try {
+                // 调用后端API获取必要的参数
+            console.log('Creating payment session...');
+                
+                // 更新左栏订单详情
+                updateOrderDetails(orderId, amount, currency);
+                
+                const response = await fetch('/api/create-dropin-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        amount: amount,
+                        currency: currency,
+                        reference: document.getElementById('reference').value
+                    })
+                });
+                
+                console.log('API response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API request failed: ${response.status} ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('API response data:', data);
+                
+                if (data.success) {
+                    console.log('Session created successfully, sessionId:', data.sessionId);
+                    
+                    // 保存sessionId到隐藏字段
+                    document.getElementById('sessionId').value = data.sessionId;
+                    
+                    // 隐藏初始安全提示和支付按钮
+                    document.getElementById('paymentPlaceholder').classList.add('hidden');
+                    document.getElementById('paymentButtonContainer').classList.add('hidden');
+                    
+                    // 显示Drop-in插件容器
+                    document.getElementById('dropInApp').classList.remove('hidden');
+                    
+                    // 检查SDK加载状态
+                    console.log('Checking SDK loading status...');
+                    const sdkLoaded = await checkSDKWithDelay();
+                    
+                    if (sdkLoaded) {
+                        console.log('SDK loaded successfully, initializing Drop-in SDK');
+                        try {
+                            // 初始化Drop-in SDK
+                            const dropin = await initDropinSDK(data.sessionId);
+                            console.log('Drop-in SDK initialized successfully');
+                            dropinInstance = dropin;
+                        } catch (sdkError) {
+                            console.error('SDK initialization failed, using iframe fallback:', sdkError);
+                            // SDK初始化失败，使用iframe fallback
+                            embedPaymentIframe(data.linkUrl);
+                        }
+                    } else {
+                        console.warn('SDK not loaded, using iframe fallback');
+                        // SDK未加载，使用iframe fallback
+                        embedPaymentIframe(data.linkUrl);
+                    }
+                } else {
+                    throw new Error('Failed to create dropin session: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('创建支付会话失败: ' + error.message);
+                
+                // 恢复初始状态
+                document.getElementById('paymentPlaceholder').classList.remove('hidden');
+                document.getElementById('paymentButtonContainer').classList.remove('hidden');
+                document.getElementById('dropInApp').classList.add('hidden');
+            } finally {
+                // 恢复按钮状态
+                const payBtn = document.getElementById('payBtn');
+                payBtn.disabled = false;
+                payBtn.innerHTML = '<i class="fa fa-credit-card mr-2"></i> 立即支付';
+            }
+        }
+        
+        // 更新订单详情
+        function updateOrderDetails(orderId, amount, currency) {
+            const now = new Date();
+            const orderTime = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            document.getElementById('displayOrderId').textContent = orderId;
+            document.getElementById('displayOrderTime').textContent = orderTime;
+            
+            const currencySymbol = currency === 'USD' ? '$' : currency === 'HKD' ? 'HK$' : '¥';
+            const formattedAmount = `${currencySymbol}${parseFloat(amount).toFixed(2)}`;
+            
+            document.getElementById('displayAmount').textContent = formattedAmount;
+            document.getElementById('displayTotal').textContent = formattedAmount;
+        }
+        
+        // 嵌入支付iframe
+        function embedPaymentIframe(linkUrl) {
+            console.log('Embedding payment iframe with URL:', linkUrl);
+            const container = document.getElementById('dropInApp');
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 创建iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = linkUrl;
+            iframe.width = '100%';
+            iframe.height = '500px';
+            iframe.frameBorder = '0';
+            iframe.allowFullscreen = true;
+            iframe.style.borderRadius = '8px';
+            
+            // 添加到容器
+            container.appendChild(iframe);
+            
+            console.log('Payment iframe embedded successfully');
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing Drop-in demo');
+            
+            // 立即检查SDK加载状态
+            checkSDKWithDelay().then(loaded => {
+                if (loaded) {
+                    console.log('SDK already loaded, ready for use');
+                } else {
+                    console.warn('SDK not loaded yet, will check again when form is submitted');
+                }
+            });
+            
+            // 表单提交处理
+            document.getElementById('paymentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('Form submitted, initializing Drop-in');
+                
+                // 初始化Dropin
+                initDropin();
+            });
+        });
+    </script>
+</body>
+</html>

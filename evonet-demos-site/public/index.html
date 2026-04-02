@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evonet Demos - 产品演示与文档中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+        }
+        .filter-btn {
+            transition: all 0.2s ease;
+            color: #0277DD;
+        }
+        .filter-btn.active {
+            background-color: #0277DD;
+            color: white;
+            border-color: #0277DD;
+        }
+        .filter-btn:not(.active):hover {
+            background-color: #0277DD;
+            color: white;
+        }
+        .coming-soon-badge {
+            background: #0277DD;
+        }
+        .gradient-linkpay {
+            background: linear-gradient(135deg, #0277DD 0%, #025bb3 100%);
+        }
+        .gradient-dropin {
+            background: linear-gradient(135deg, #0277DD 0%, #0260a8 100%);
+        }
+        .gradient-directapi {
+            background: linear-gradient(135deg, #0277DD 0%, #025a9e 100%);
+        }
+        .gradient-doc {
+            background: linear-gradient(135deg, #48E5CE 0%, #2dd4bf 100%);
+        }
+        .gradient-linkpay-sub {
+            background: linear-gradient(135deg, #4ADAFC 0%, #38bdf8 100%);
+        }
+        .gradient-dropin-sub {
+            background: linear-gradient(135deg, #4ADAFC 0%, #22d3ee 100%);
+        }
+        .gradient-directapi-sub {
+            background: linear-gradient(135deg, #4ADAFC 0%, #67e8f9 100%);
+        }
+    </style>
+</head>
+<body class="bg-[#F2F9FF] font-sans min-h-screen">
+    <div class="min-h-screen flex flex-col justify-between">
+        <header class="bg-[#0277DD] text-white z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 flex items-center">
+                            <div class="flex items-center justify-center mr-2">
+                                <span class="text-white font-bold text-2xl tracking-tight">Evonet</span>
+                            </div>
+                            <span class="text-xl font-bold text-white">Demos Site</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://developer.evonetonline.com" target="_blank" class="text-sm font-medium text-white hover:text-white/80 mr-4">
+                            <i class="fa fa-book mr-1"></i>开发者中心
+                        </a>
+                        <a href="https://evonetglobal.com/zh/" target="_blank" class="text-sm font-medium text-white hover:text-white/80">
+                            <i class="fa fa-globe mr-1"></i>官网
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="text-center mb-10">
+                    <div class="flex items-center justify-center mb-4">
+                        <span class="text-[#0277DD] font-bold text-3xl tracking-tight mr-2">Evonet</span>
+                        <span class="text-gray-900 font-bold text-2xl">Demos Site</span>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-3">产品演示与文档中心</h1>
+                    <p class="text-gray-700 max-w-2xl mx-auto">
+                        体验 Evonet 支付产品的完整功能，查看集成文档快速接入。
+                    </p>
+                </div>
+
+                <div class="bg-[#F2F9FF] rounded-xl shadow-sm p-6 mb-8">
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-[#0277DD] mb-3">
+                                <i class="fa fa-filter mr-1"></i>类型筛选
+                            </label>
+                            <div class="flex flex-wrap gap-2" id="typeFilter">
+                                <button class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium border" data-type="all">
+                                    <i class="fa fa-th-large mr-1"></i>All
+                                </button>
+                                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border" data-type="demo">
+                                    <i class="fa fa-play-circle mr-1"></i>Demo
+                                </button>
+                                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border" data-type="doc">
+                                    <i class="fa fa-file-text mr-1"></i>Doc
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-[#0277DD] mb-3">
+                                <i class="fa fa-cube mr-1"></i>产品筛选
+                            </label>
+                            <div class="flex flex-wrap gap-2" id="productFilter">
+                                <button class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium border" data-product="all">
+                                    <i class="fa fa-cubes mr-1"></i>All
+                                </button>
+                                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border" data-product="linkpay">
+                                    <i class="fa fa-link mr-1"></i>LinkPay
+                                </button>
+                                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border" data-product="dropin">
+                                    <i class="fa fa-puzzle-piece mr-1"></i>Drop-in
+                                </button>
+                                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border" data-product="directapi">
+                                    <i class="fa fa-code mr-1"></i>Direct API
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="cardsContainer">
+                </div>
+
+                <div id="emptyState" class="hidden text-center py-16">
+                    <i class="fa fa-search text-[#0277DD] text-5xl mb-4 opacity-50"></i>
+                    <p class="text-[#0277DD] text-lg">没有找到匹配的内容</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-[#0277DD] text-white py-6">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-white/90">&copy; 2026 Evonet. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-sm text-white/90 hover:text-white">隐私政策</a>
+                        <a href="#" class="text-sm text-white/90 hover:text-white">服务条款</a>
+                        <a href="#" class="text-sm text-white/90 hover:text-white">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const cardsData = [
+            {
+                id: 'linkpay-oneoff',
+                type: 'demo',
+                product: 'linkpay',
+                title: 'LinkPay 一次性支付',
+                description: '体验 LinkPay 一次性支付完整流程，支持多种支付方式。',
+                icon: 'fa-credit-card',
+                url: 'http://localhost:3000/',
+                isExternal: true,
+                badge: null,
+                gradientClass: 'gradient-linkpay'
+            },
+            {
+                id: 'linkpay-subscription',
+                type: 'demo',
+                product: 'linkpay',
+                title: 'LinkPay 订阅支付',
+                description: '体验 LinkPay 订阅支付功能，支持周期性自动扣款。',
+                icon: 'fa-bell',
+                url: 'http://localhost:3005/index.html',
+                isExternal: true,
+                badge: null,
+                gradientClass: 'gradient-linkpay-sub'
+            },
+            {
+                id: 'linkpay-doc',
+                type: 'doc',
+                product: 'linkpay',
+                title: 'LinkPay 集成文档',
+                description: 'LinkPay 产品集成指南，包含完整的接入步骤和示例代码。',
+                icon: 'fa-book',
+                url: 'https://developer.evonetonline.com/docs/linkpay-integration-step',
+                isExternal: false,
+                badge: null,
+                gradientClass: 'gradient-doc'
+            },
+            {
+                id: 'dropin-oneoff',
+                type: 'demo',
+                product: 'dropin',
+                title: 'Drop-in 一次性支付',
+                description: '体验 Drop-in 组件一次性支付，快速集成支付功能。',
+                icon: 'fa-credit-card',
+                url: 'http://localhost:3001/',
+                isExternal: true,
+                badge: null,
+                gradientClass: 'gradient-dropin'
+            },
+            {
+                id: 'dropin-subscription',
+                type: 'demo',
+                product: 'dropin',
+                title: 'Drop-in 订阅支付',
+                description: '体验 Drop-in 组件订阅支付功能，便捷管理周期性付款。',
+                icon: 'fa-bell',
+                url: 'http://localhost:3003/',
+                isExternal: true,
+                badge: null,
+                gradientClass: 'gradient-dropin-sub'
+            },
+            {
+                id: 'dropin-doc',
+                type: 'doc',
+                product: 'dropin',
+                title: 'Drop-in 集成文档',
+                description: 'Drop-in 组件集成指南，包含组件配置和回调处理。',
+                icon: 'fa-book',
+                url: 'https://developer.evonetonline.com/docs/drop-in-integration',
+                isExternal: false,
+                badge: null,
+                gradientClass: 'gradient-doc'
+            },
+            {
+                id: 'directapi-oneoff',
+                type: 'demo',
+                product: 'directapi',
+                title: 'Direct API 一次性支付',
+                description: '体验 Direct API 一次性支付，完全自定义支付流程。',
+                icon: 'fa-credit-card',
+                url: 'http://localhost:3002/',
+                isExternal: true,
+                badge: null,
+                gradientClass: 'gradient-directapi'
+            },
+            {
+                id: 'directapi-subscription',
+                type: 'demo',
+                product: 'directapi',
+                title: 'Direct API 订阅支付',
+                description: '体验 Direct API 订阅支付功能，灵活控制订阅逻辑。',
+                icon: 'fa-bell',
+                url: 'http://localhost:3004/',
+                isExternal: true,
+                badge: null,
+                gradientClass: 'gradient-directapi-sub'
+            },
+            {
+                id: 'directapi-doc',
+                type: 'doc',
+                product: 'directapi',
+                title: 'Direct API 集成文档',
+                description: 'Direct API 集成指南，包含 API 接口详细说明。',
+                icon: 'fa-book',
+                url: 'https://developer.evonetonline.com/docs/direct-api-integration',
+                isExternal: false,
+                badge: null,
+                gradientClass: 'gradient-doc'
+            }
+        ];
+
+        let currentTypeFilter = 'all';
+        let currentProductFilter = 'all';
+        let serviceStatus = {};
+
+        async function checkServiceStatus() {
+            try {
+                const response = await fetch('/api/service/status');
+                serviceStatus = await response.json();
+                renderCards();
+            } catch (error) {
+                console.error('Failed to check service status:', error);
+            }
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cardsContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            const filteredCards = cardsData.filter(card => {
+                const typeMatch = currentTypeFilter === 'all' || card.type === currentTypeFilter;
+                const productMatch = currentProductFilter === 'all' || card.product === currentProductFilter;
+                return typeMatch && productMatch;
+            });
+
+            if (filteredCards.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            
+            container.innerHTML = filteredCards.map(card => {
+                const isRunning = card.type === 'demo' && serviceStatus[card.id];
+                const statusBadge = card.type === 'demo' ? `
+                    <span class="absolute bottom-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${isRunning ? 'bg-green-500' : 'bg-gray-400'} text-white flex items-center">
+                        <span class="w-2 h-2 rounded-full ${isRunning ? 'bg-white' : 'bg-gray-200'} mr-1"></span>
+                        ${isRunning ? '运行中' : '未启动'}
+                    </span>
+                ` : '';
+                
+                return `
+                <div class="card-hover bg-white rounded-xl shadow-sm overflow-hidden flex flex-col" data-type="${card.type}" data-product="${card.product}">
+                    <div class="h-32 relative ${card.gradientClass}">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i class="fa ${card.icon} text-white text-4xl opacity-80"></i>
+                        </div>
+                        ${card.badge ? `
+                            <span class="coming-soon-badge absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-medium text-white">
+                                ${card.badge}
+                            </span>
+                        ` : ''}
+                        <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium ${card.type === 'demo' ? 'bg-[#0277DD]' : 'bg-emerald-500'} text-white">
+                            ${card.type === 'demo' ? 'Demo' : 'Doc'}
+                        </span>
+                        ${statusBadge}
+                    </div>
+                    <div class="p-5 flex flex-col flex-grow">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">${card.title}</h3>
+                        <p class="text-sm text-gray-600 mb-4 line-clamp-2 flex-grow">${card.description}</p>
+                        <button 
+                            onclick="handleCardClick('${card.id}')" 
+                            id="btn-${card.id}"
+                            class="w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-colors duration-200 ${
+                                card.badge 
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                    : card.type === 'demo' 
+                                        ? 'bg-[#0277DD] hover:bg-[#025bb3] text-white' 
+                                        : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                            }"
+                            ${card.badge ? 'disabled' : ''}
+                        >
+                            <i class="fa ${card.type === 'demo' ? 'fa-play' : 'fa-external-link'} mr-2"></i>
+                            <span id="btn-text-${card.id}">${card.badge ? '即将推出' : (card.type === 'demo' ? '开始体验' : '查看文档')}</span>
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        async function handleCardClick(cardId) {
+            const card = cardsData.find(c => c.id === cardId);
+            if (!card || card.badge) return;
+
+            if (card.type === 'doc') {
+                window.open(card.url, '_blank');
+                return;
+            }
+
+            const btn = document.getElementById(`btn-${cardId}`);
+            const btnText = document.getElementById(`btn-text-${cardId}`);
+            const originalText = btnText.textContent;
+
+            btnText.textContent = '正在启动服务...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/service/start/${cardId}`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    btnText.textContent = '服务已启动，正在跳转...';
+                    setTimeout(() => {
+                        window.location.href = card.url;
+                    }, 500);
+                } else {
+                    btnText.textContent = originalText;
+                    btn.disabled = false;
+                    alert('服务启动失败，请稍后重试');
+                }
+            } catch (error) {
+                btnText.textContent = originalText;
+                btn.disabled = false;
+                alert('服务启动失败: ' + error.message);
+            }
+        }
+
+        document.getElementById('typeFilter').addEventListener('click', function(e) {
+            const btn = e.target.closest('.filter-btn');
+            if (!btn) return;
+
+            document.querySelectorAll('#typeFilter .filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTypeFilter = btn.dataset.type;
+            renderCards();
+        });
+
+        document.getElementById('productFilter').addEventListener('click', function(e) {
+            const btn = e.target.closest('.filter-btn');
+            if (!btn) return;
+
+            document.querySelectorAll('#productFilter .filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentProductFilter = btn.dataset.product;
+            renderCards();
+        });
+
+        checkServiceStatus();
+        setInterval(checkServiceStatus, 5000);
+    </script>
+</body>
+</html>

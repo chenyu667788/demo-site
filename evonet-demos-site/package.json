@@ -1,0 +1,20 @@
+{
+  "name": "evonet-demos-site",
+  "version": "1.0.0",
+  "description": "Evonet Demos Site - 产品演示与文档中心",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "evonet",
+    "payment",
+    "demos"
+  ],
+  "author": "Evonet",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

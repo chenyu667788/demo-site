@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evonet LinkPay 支付演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'rgb(2, 117, 221)',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                        'brand-blue': 'rgb(2, 117, 221)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-[rgb(242,249,255)] font-sans">
+    <div class="min-h-screen flex flex-col">
+        <!-- 头部导航 -->
+        <header class="bg-[rgb(2,117,221)] border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="http://localhost:8080/" class="text-sm text-white hover:text-white/80 mr-6">Back to site</a>
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-white text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-white">Evonet LinkPay</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://evonetglobal.com/zh/contact-us/" target="_blank" class="text-sm font-medium text-white hover:text-white/80">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="flex-grow">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2">
+                        <!-- 左侧：订单详情 -->
+                        <div class="p-6 border-r border-gray-200">
+                            <h1 class="text-2xl font-bold text-gray-900 mb-6">订单详情</h1>
+                            
+                            <!-- 支付表单 -->
+                            <form id="paymentForm" class="space-y-6">
+                                <!-- 订单信息 -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="orderId" class="block text-sm font-medium text-gray-700 mb-1">订单编号</label>
+                                        <input type="text" id="orderId" name="orderId" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none" readonly placeholder="系统将自动生成">
+                                        <p class="mt-1 text-xs text-gray-500">系统将自动生成唯一订单编号</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">交易金额</label>
+                                        <input type="number" id="amount" name="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" value="100" step="0.01" placeholder="交易金额">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">货币</label>
+                                        <select id="currency" name="currency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <option value="USD">USD - 美元</option>
+                                            <option value="HKD">HKD - 港币</option>
+                                            <option value="CNY">CNY - 人民币</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="reference" class="block text-sm font-medium text-gray-700 mb-1">用户参考</label>
+                                        <input type="text" id="reference" name="reference" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" value="test_user" placeholder="用户参考">
+                                    </div>
+                                </div>
+                                
+                                <!-- 支付按钮 -->
+                                <div class="pt-4">
+                                    <button type="submit" id="payBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center">
+                                        <i class="fa fa-credit-card mr-2"></i>
+                                        发起支付
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- 右侧：支付详情 -->
+                        <div class="p-6 bg-gradient-to-br from-blue-50 to-indigo-50">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">支付详情</h2>
+                            
+                            <!-- 支付方式说明 -->
+                            <div class="mb-8">
+                                <div class="flex items-center mb-4">
+                                    <i class="fa fa-shield text-primary text-2xl mr-3"></i>
+                                    <h3 class="text-lg font-semibold text-gray-900">安全支付</h3>
+                                </div>
+                                <p class="text-gray-600 mb-4">
+                                    使用 Evonet LinkPay 安全支付系统，您的支付信息将受到银行级别的加密保护。
+                                </p>
+                            </div>
+                            
+                            <!-- 支付特点 -->
+                            <div class="mb-8">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <!-- 第一行：SSL加密传输 + PCI DSS认证 -->
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-lock text-secondary text-xl"></i>
+                                        </div>
+                                        <div class="ml-2">
+                                            <h4 class="text-sm font-medium text-gray-900">SSL加密传输</h4>
+                                            <p class="text-xs text-gray-600">256位SSL加密</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-check-circle text-secondary text-xl"></i>
+                                        </div>
+                                        <div class="ml-2">
+                                            <h4 class="text-sm font-medium text-gray-900">PCI DSS认证</h4>
+                                            <p class="text-xs text-gray-600">国际安全标准</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 第二行：实时处理 + 多种支付方式 -->
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-clock-o text-secondary text-xl"></i>
+                                        </div>
+                                        <div class="ml-2">
+                                            <h4 class="text-sm font-medium text-gray-900">实时处理</h4>
+                                            <p class="text-xs text-gray-600">快速确认订单</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-credit-card text-secondary text-xl"></i>
+                                        </div>
+                                        <div class="ml-2">
+                                            <h4 class="text-sm font-medium text-gray-900">多种支付方式</h4>
+                                            <p class="text-xs text-gray-600">信用卡/借记卡</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 支付流程说明 -->
+                            <div class="bg-white rounded-lg p-6 shadow-sm">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">支付流程</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                            1
+                                        </div>
+                                        <p class="ml-3 text-sm text-gray-600">填写订单信息并点击"发起支付"</p>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                            2
+                                        </div>
+                                        <p class="ml-3 text-sm text-gray-600">跳转到LinkPay安全支付页面</p>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                            3
+                                        </div>
+                                        <p class="ml-3 text-sm text-gray-600">选择支付方式并完成支付</p>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                            4
+                                        </div>
+                                        <p class="ml-3 text-sm text-gray-600">返回商户页面查看订单详情</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="bg-[rgb(2,117,221)] py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-white">© 2026 Evonet LinkPay Demo. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-sm text-white hover:text-white/80">隐私政策</a>
+                        <a href="#" class="text-sm text-white hover:text-white/80">服务条款</a>
+                        <a href="#" class="text-sm text-white hover:text-white/80">关于我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 生成订单编号（带实时时间）
+        function generateOrderId() {
+            const timestamp = Date.now();
+            const random = Math.floor(Math.random() * 10000);
+            const randomStr = Math.random().toString(36).substr(2, 9);
+            
+            // 格式：ORD-时间戳-随机数-随机字符串
+            return `ORD-${timestamp}-${random}-${randomStr}`;
+        }
+        
+        // 表单提交处理
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 生成订单编号
+            const orderId = generateOrderId();
+            document.getElementById('orderId').value = orderId;
+            
+            // 显示加载状态
+            const payBtn = document.getElementById('payBtn');
+            const originalBtnText = payBtn.innerHTML;
+            payBtn.disabled = true;
+            payBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 正在创建支付订单...';
+            
+            // 获取表单数据
+            const formData = {
+                orderId: orderId,
+                amount: document.getElementById('amount').value,
+                currency: document.getElementById('currency').value,
+                reference: document.getElementById('reference').value
+            };
+            
+            console.log('发起支付请求:', formData);
+            
+            // 存储订单信息到本地存储，供订单追踪页面使用
+            localStorage.setItem('currentOrder', JSON.stringify({
+                orderId: orderId,
+                amount: formData.amount,
+                currency: formData.currency,
+                reference: formData.reference,
+                createTime: new Date().toISOString()
+            }));
+            
+            // 调用后端API创建支付订单
+            fetch('/api/create-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('支付订单创建结果:', data);
+                
+                if (data.success && data.paymentUrl) {
+                    // 直接跳转到支付页面
+                    console.log('跳转到支付页面:', data.paymentUrl);
+                    window.location.href = data.paymentUrl;
+                } else {
+                    // 显示错误信息
+                    alert('创建支付订单失败: ' + (data.error || '未知错误'));
+                    // 恢复按钮状态
+                    payBtn.disabled = false;
+                    payBtn.innerHTML = originalBtnText;
+                    // 清空订单编号
+                    document.getElementById('orderId').value = '';
+                }
+            })
+            .catch(error => {
+                console.error('支付请求错误:', error);
+                alert('创建支付订单失败: ' + error.message);
+                // 恢复按钮状态
+                payBtn.disabled = false;
+                payBtn.innerHTML = originalBtnText;
+                // 清空订单编号
+                document.getElementById('orderId').value = '';
+            });
+        });
+    </script>
+</body>
+</html>

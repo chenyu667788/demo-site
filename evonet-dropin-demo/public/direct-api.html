@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evonet Direct API 支付演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+        <!-- 头部导航 -->
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 flex items-center">
+                            <i class="fa fa-credit-card text-primary text-2xl mr-2"></i>
+                            <span class="text-xl font-bold text-gray-900">Evonet Direct API</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="index.html" class="text-sm font-medium text-gray-700 hover:text-primary mr-4">Drop-in 演示</a>
+                        <a href="#" class="text-sm font-medium text-gray-700 hover:text-primary">帮助中心</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="flex-grow">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="bg-white rounded-lg card-shadow p-8">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-6">Evonet Direct API 支付演示</h1>
+                    
+                    <!-- 支付表单 -->
+                    <form id="paymentForm" class="space-y-6">
+                        <!-- 订单信息 -->
+                        <div>
+                            <h2 class="text-lg font-medium text-gray-900 mb-4">订单信息</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="orderId" class="block text-sm font-medium text-gray-700 mb-1">订单编号</label>
+                                    <input type="text" id="orderId" name="orderId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" value="ORD-20260316-" placeholder="订单编号">
+                                </div>
+                                <div>
+                                    <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">交易金额</label>
+                                    <input type="number" id="amount" name="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" value="100" step="0.01" placeholder="交易金额">
+                                </div>
+                                <div>
+                                    <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">货币</label>
+                                    <select id="currency" name="currency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="HKD">HKD - 港币</option>
+                                        <option value="USD">USD - 美元</option>
+                                        <option value="CNY">CNY - 人民币</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 支付方式选择 -->
+                        <div>
+                            <h2 class="text-lg font-medium text-gray-900 mb-4">支付方式</h2>
+                            <div class="space-y-4">
+                                <!-- 银行卡支付 -->
+                                <div class="border border-gray-300 rounded-md p-4">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="payment-card" name="paymentMethod" value="card" class="h-4 w-4 text-primary focus:ring-primary" checked>
+                                        <label for="payment-card" class="ml-2 block text-sm font-medium text-gray-900">银行卡</label>
+                                    </div>
+                                    <div id="card-details" class="mt-4 space-y-3">
+                                        <div>
+                                            <label for="cardNumber" class="block text-sm font-medium text-gray-700 mb-1">卡号</label>
+                                            <input type="text" id="cardNumber" name="cardNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入卡号" value="4761360072118507">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="expiryDate" class="block text-sm font-medium text-gray-700 mb-1">有效期</label>
+                                                <input type="text" id="expiryDate" name="expiryDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="MMYY" value="0529">
+                                            </div>
+                                            <div>
+                                                <label for="holderName" class="block text-sm font-medium text-gray-700 mb-1">持卡人姓名</label>
+                                                <input type="text" id="holderName" name="holderName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入持卡人姓名" value="Paulette Homenick">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 电子钱包支付 -->
+                                <div class="border border-gray-300 rounded-md p-4">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="payment-ewallet" name="paymentMethod" value="e-wallet" class="h-4 w-4 text-primary focus:ring-primary">
+                                        <label for="payment-ewallet" class="ml-2 block text-sm font-medium text-gray-900">电子钱包</label>
+                                    </div>
+                                    <div id="ewallet-details" class="mt-4 space-y-3 hidden">
+                                        <div>
+                                            <label for="walletBrand" class="block text-sm font-medium text-gray-700 mb-1">钱包品牌</label>
+                                            <select id="walletBrand" name="walletBrand" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                <option value="Merpay">Merpay</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 支付按钮 -->
+                        <div class="pt-4">
+                            <button type="submit" id="payBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center">
+                                <i class="fa fa-credit-card mr-2"></i>
+                                发起支付
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- 支付结果 -->
+                    <div id="paymentResult" class="mt-6 hidden">
+                        <div class="bg-neutral-light p-4 rounded-md">
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">支付申请结果</h3>
+                            <div class="space-y-2" id="resultDetails">
+                                <!-- 结果详情将在这里动态显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="bg-white border-t border-gray-200 py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-neutral">© 2026 Evonet Direct API Demo. 保留所有权利。</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="index.html" class="text-sm text-neutral hover:text-primary">Drop-in 演示</a>
+                        <a href="#" class="text-sm text-neutral hover:text-primary">隐私政策</a>
+                        <a href="#" class="text-sm text-neutral hover:text-primary">服务条款</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 支付方式切换
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // 隐藏所有支付方式详情
+                document.getElementById('card-details').classList.add('hidden');
+                document.getElementById('ewallet-details').classList.add('hidden');
+                
+                // 显示选中的支付方式详情
+                if (this.value === 'card') {
+                    document.getElementById('card-details').classList.remove('hidden');
+                } else if (this.value === 'e-wallet') {
+                    document.getElementById('ewallet-details').classList.remove('hidden');
+                }
+            });
+        });
+        
+        // 表单提交处理
+        document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const payBtn = document.getElementById('payBtn');
+            payBtn.disabled = true;
+            payBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 处理中...';
+            
+            try {
+                // 构建支付方式数据
+                const paymentMethodType = document.querySelector('input[name="paymentMethod"]:checked').value;
+                let paymentMethod = { type: paymentMethodType };
+                
+                if (paymentMethodType === 'card') {
+                    paymentMethod.card = {
+                        cardInfo: {
+                            cardNumber: document.getElementById('cardNumber').value,
+                            expiryDate: document.getElementById('expiryDate').value,
+                            holderName: document.getElementById('holderName').value
+                        }
+                    };
+                } else if (paymentMethodType === 'e-wallet') {
+                    paymentMethod['e-wallet'] = {
+                        paymentBrand: document.getElementById('walletBrand').value
+                    };
+                }
+                
+                // 构建请求数据
+                const requestData = {
+                    merchantTransID: document.getElementById('orderId').value + Date.now(),
+                    amount: document.getElementById('amount').value,
+                    currency: document.getElementById('currency').value,
+                    paymentMethod: paymentMethod
+                };
+                
+                console.log('Payment request data:', requestData);
+                
+                // 调用后端API
+                const response = await fetch('/api/direct-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                console.log('Payment API response:', result);
+                
+                if (result.success) {
+                    displayPaymentResult(result.result);
+                } else {
+                    throw new Error(result.error || '支付请求失败');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                displayError(error.message);
+            } finally {
+                payBtn.disabled = false;
+                payBtn.innerHTML = '<i class="fa fa-credit-card mr-2"></i> 发起支付';
+            }
+        });
+        
+        // 显示支付结果
+        function displayPaymentResult(result) {
+            const resultDiv = document.getElementById('paymentResult');
+            const resultDetails = document.getElementById('resultDetails');
+            
+            let details = '';
+            
+            // 基本信息
+            details += `<div><span class="text-neutral">状态码:</span> <span class="font-medium ml-2">${result.result.code}</span></div>`;
+            details += `<div><span class="text-neutral">状态信息:</span> <span class="font-medium ml-2">${result.result.message}</span></div>`;
+            
+            // 支付状态
+            if (result.payment) {
+                details += `<div><span class="text-neutral">支付状态:</span> <span class="font-medium ml-2">${result.payment.status}</span></div>`;
+                if (result.payment.merchantTransInfo) {
+                    details += `<div><span class="text-neutral">商户交易ID:</span> <span class="font-medium ml-2">${result.payment.merchantTransInfo.merchantTransID}</span></div>`;
+                }
+            }
+            
+            // 操作信息
+            if (result.action) {
+                details += `<div><span class="text-neutral">操作类型:</span> <span class="font-medium ml-2">${result.action.type}</span></div>`;
+                if (result.action.threeDSData) {
+                    details += `<div><span class="text-neutral">3DS URL:</span> <a href="${result.action.threeDSData.url}" target="_blank" class="font-medium ml-2 text-primary hover:underline">点击跳转</a></div>`;
+                } else if (result.action.redirectData) {
+                    details += `<div><span class="text-neutral">跳转URL:</span> <a href="${result.action.redirectData.url}" target="_blank" class="font-medium ml-2 text-primary hover:underline">点击跳转</a></div>`;
+                }
+            }
+            
+            resultDetails.innerHTML = details;
+            resultDiv.classList.remove('hidden');
+        }
+        
+        // 显示错误信息
+        function displayError(message) {
+            const resultDiv = document.getElementById('paymentResult');
+            const resultDetails = document.getElementById('resultDetails');
+            
+            resultDetails.innerHTML = `<div class="text-red-600">${message}</div>`;
+            resultDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
